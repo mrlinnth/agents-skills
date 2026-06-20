@@ -1,0 +1,1140 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const VERSION = '1.0.0';
+const PORT_START = 4242;
+const PORT_END = 4250;
+
+// ---------------------------------------------------------------------------
+// Path resolution
+// ---------------------------------------------------------------------------
+
+function resolveProjectRoot() {
+  const arg = process.argv[2];
+  if (arg) {
+    const resolved = path.resolve(arg);
+    if (!fs.existsSync(resolved)) {
+      console.error(`Error: Path "${resolved}" does not exist.`);
+      process.exit(1);
+    }
+    return resolved;
+  }
+  return process.cwd();
+}
+
+// ---------------------------------------------------------------------------
+// Git branch
+// ---------------------------------------------------------------------------
+
+function getGitBranch(projectRoot) {
+  try {
+    return execSync(`git -C "${projectRoot}" rev-parse --abbrev-ref HEAD`, {
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).toString().trim();
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File reading helpers
+// ---------------------------------------------------------------------------
+
+function readFileSafe(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PROGRESS.md parsing
+// ---------------------------------------------------------------------------
+
+function parseProgress(raw) {
+  if (!raw) return { exists: false };
+
+  const result = {
+    exists: true,
+    currentFeature: null,
+    currentTask: null,
+    currentTaskName: null,
+    branch: null,
+    status: null,
+    blockers: null,
+    upNext: [],
+    raw
+  };
+
+  const lines = raw.split('\n');
+  let inUpNext = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (/^\*\*Feature\*\*:/.test(trimmed)) {
+      result.currentFeature = trimmed.replace(/^\*\*Feature\*\*:\s*/, '').trim();
+      inUpNext = false;
+    } else if (/^\*\*Task\*\*:/.test(trimmed)) {
+      const raw = trimmed.replace(/^\*\*Task\*\*:\s*/, '').trim();
+      // e.g. "2.3 (Token Management)" or "2.3"
+      const m = raw.match(/^([\d.]+)\s*(?:\(([^)]+)\))?/);
+      if (m) {
+        result.currentTask = m[1] || null;
+        result.currentTaskName = m[2] || null;
+      }
+      inUpNext = false;
+    } else if (/^\*\*Branch\*\*:/.test(trimmed)) {
+      result.branch = trimmed.replace(/^\*\*Branch\*\*:\s*/, '').trim();
+      inUpNext = false;
+    } else if (/^\*\*Status\*\*:/.test(trimmed)) {
+      result.status = trimmed.replace(/^\*\*Status\*\*:\s*/, '').trim();
+      inUpNext = false;
+    } else if (/^\*\*Blockers?\*\*:/.test(trimmed)) {
+      result.blockers = trimmed.replace(/^\*\*Blockers?\*\*:\s*/, '').trim();
+      inUpNext = false;
+    } else if (/^##\s+Up Next/.test(trimmed)) {
+      inUpNext = true;
+    } else if (inUpNext) {
+      if (/^##/.test(trimmed)) {
+        inUpNext = false;
+      } else if (/^[-*]\s+/.test(trimmed)) {
+        result.upNext.push(trimmed.replace(/^[-*]\s+/, '').trim());
+      }
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Plan file parsing
+// ---------------------------------------------------------------------------
+
+function parsePlanFile(raw, sourceFile) {
+  if (!raw) return [];
+
+  const tasks = [];
+  const lines = raw.split('\n');
+  let current = null;
+  let section = null;
+
+  function pushCurrent() {
+    if (current) tasks.push(current);
+    current = null;
+    section = null;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Task heading: ## Task 1.1: Title or ## Task 1.1: Title [DONE]
+    const taskMatch = trimmed.match(/^##\s+Task\s+([\d.]+):\s+(.+?)(\s+\[DONE\])?$/i);
+    if (taskMatch) {
+      pushCurrent();
+      const done = !!taskMatch[3];
+      const title = taskMatch[2].replace(/\[DONE\]/i, '').trim();
+      current = {
+        id: taskMatch[1],
+        title,
+        done,
+        subtasks: [],
+        keyFiles: [],
+        verification: null,
+        sourceFile
+      };
+      section = null;
+      continue;
+    }
+
+    if (!current) continue;
+
+    // Section headings
+    if (/^###\s+Subtasks?/i.test(trimmed)) { section = 'subtasks'; continue; }
+    if (/^###\s+Key\s+Files?/i.test(trimmed)) { section = 'keyfiles'; continue; }
+    if (/^###\s+Verification/i.test(trimmed)) { section = 'verification'; continue; }
+    if (/^###/.test(trimmed)) { section = null; continue; }
+
+    if (section === 'subtasks') {
+      const checked = /^-\s+\[x\]/i.test(trimmed);
+      const unchecked = /^-\s+\[ \]/.test(trimmed);
+      if (checked || unchecked) {
+        const text = trimmed.replace(/^-\s+\[[x ]\]\s*/i, '').trim();
+        current.subtasks.push({ text, checked });
+      }
+    } else if (section === 'keyfiles') {
+      if (/^[-*]\s+/.test(trimmed)) {
+        current.keyFiles.push(trimmed.replace(/^[-*]\s+/, '').trim());
+      }
+    } else if (section === 'verification') {
+      if (trimmed && !/^###/.test(trimmed)) {
+        current.verification = (current.verification ? current.verification + '\n' : '') + trimmed;
+      }
+    }
+  }
+
+  pushCurrent();
+  return tasks;
+}
+
+// ---------------------------------------------------------------------------
+// Feature directory parsing
+// ---------------------------------------------------------------------------
+
+function parseFeature(featureDir, featureName) {
+  const entries = fs.readdirSync(featureDir).sort();
+  const planFiles = entries.filter(e => e !== 'requirements.md' && e.endsWith('.md'));
+  const hasRequirements = entries.includes('requirements.md');
+  const requirements = hasRequirements
+    ? readFileSafe(path.join(featureDir, 'requirements.md'))
+    : null;
+
+  const allTasks = [];
+  for (const file of planFiles) {
+    const raw = readFileSafe(path.join(featureDir, file));
+    if (raw) {
+      const tasks = parsePlanFile(raw, file);
+      allTasks.push(...tasks);
+    }
+  }
+
+  const doneTasks = allTasks.filter(t => t.done).length;
+
+  return {
+    name: featureName,
+    hasRequirements,
+    requirements,
+    totalTasks: allTasks.length,
+    doneTasks,
+    tasks: allTasks
+  };
+}
+
+// ---------------------------------------------------------------------------
+// API data builder
+// ---------------------------------------------------------------------------
+
+function buildData(projectRoot) {
+  const projectName = path.basename(projectRoot);
+  const branch = getGitBranch(projectRoot);
+  const aiDir = path.join(projectRoot, 'ai');
+  const hasAiDir = fs.existsSync(aiDir);
+
+  const project = { name: projectName, path: projectRoot, branch, hasAiDir };
+
+  if (!hasAiDir) {
+    return { project, progress: { exists: false }, constraints: { exists: false }, prd: { exists: false }, features: [] };
+  }
+
+  // Core files
+  const progressRaw = readFileSafe(path.join(aiDir, 'PROGRESS.md'));
+  const constraintsRaw = readFileSafe(path.join(aiDir, 'CONSTRAINTS.md'));
+  const prdRaw = readFileSafe(path.join(aiDir, 'PRD.md'));
+
+  const progress = parseProgress(progressRaw);
+  const constraints = constraintsRaw
+    ? { exists: true, raw: constraintsRaw }
+    : { exists: false };
+  const prd = prdRaw
+    ? { exists: true, raw: prdRaw }
+    : { exists: false };
+
+  // Features
+  const plansDir = path.join(aiDir, 'plans');
+  let features = [];
+  if (fs.existsSync(plansDir)) {
+    const featureDirs = fs.readdirSync(plansDir)
+      .filter(e => fs.statSync(path.join(plansDir, e)).isDirectory())
+      .sort();
+    features = featureDirs.map(name => parseFeature(path.join(plansDir, name), name));
+  }
+
+  return { project, progress, constraints, prd, features };
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard HTML
+// ---------------------------------------------------------------------------
+
+function buildHtml() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ai-monitor</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --panel: #1a1d27;
+  --border: #2a2d3a;
+  --text: #e2e4ed;
+  --muted: #6b7280;
+  --accent: #6366f1;
+  --done: #22c55e;
+  --pending: #374151;
+  --code: #a78bfa;
+  --sidebar-w: 220px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#header .project-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+#header .branch {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(99,102,241,0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+#header .proj-path {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Body */
+#body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+#sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 12px 4px;
+}
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  color: var(--text);
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.04); }
+.sidebar-item.active {
+  background: rgba(99,102,241,0.12);
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+.sidebar-item .item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-item .item-ratio { font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; flex-shrink: 0; }
+.mini-progress {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 12px 6px;
+  overflow: hidden;
+}
+.mini-progress-fill {
+  height: 100%;
+  background: var(--done);
+  border-radius: 2px;
+}
+.current-badge {
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--accent);
+  background: rgba(99,102,241,0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Main */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Error state */
+.error-state {
+  padding: 40px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Sections */
+.section-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.card-value {
+  color: var(--text);
+  font-size: 13px;
+}
+.card-value.code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--code);
+}
+.progress-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* Up next list */
+.up-next-list { list-style: none; }
+.up-next-list li {
+  padding: 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.up-next-list li::before { content: '→ '; color: var(--accent); }
+
+/* Task list */
+.task-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+}
+.task-id {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.task-title { flex: 1; font-size: 13px; font-weight: 500; }
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.badge.done { background: rgba(34,197,94,0.15); color: var(--done); }
+.badge.pending { background: rgba(55,65,81,0.5); color: var(--muted); }
+
+.task-body {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.task-body-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.subtask-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.subtask-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.subtask-check {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.subtask-check.checked {
+  background: var(--done);
+  border-color: var(--done);
+  color: #fff;
+  font-size: 9px;
+}
+.subtask-item.checked-item { color: var(--text); }
+.key-files-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.key-files-list li {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--code);
+}
+.verification-block {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  white-space: pre-wrap;
+}
+
+/* Feature header */
+.feature-header { margin-bottom: 16px; }
+.feature-progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 3px;
+  margin: 8px 0 4px;
+  overflow: hidden;
+}
+.feature-progress-fill {
+  height: 100%;
+  background: var(--done);
+  border-radius: 3px;
+}
+.feature-ratio { font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+/* Collapsible */
+.collapsible-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 8px 0;
+}
+.collapsible-toggle:hover { color: var(--text); }
+.collapsible-arrow { font-size: 10px; transition: none; }
+.collapsible-body { display: none; }
+.collapsible-body.open { display: block; }
+
+/* Markdown rendered content */
+.md-content { color: var(--text); font-size: 13px; line-height: 1.65; }
+.md-content h1 { font-size: 16px; font-weight: 700; margin: 0 0 10px; }
+.md-content h2 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--text); }
+.md-content h3 { font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: var(--muted); }
+.md-content p { margin-bottom: 8px; }
+.md-content ul { margin: 6px 0 8px 16px; }
+.md-content li { margin-bottom: 3px; }
+.md-content code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: var(--code);
+  background: rgba(167,139,250,0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.md-content pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.md-content pre code {
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.md-content strong { font-weight: 600; color: var(--text); }
+.md-content .md-checkbox-done { color: var(--done); }
+.md-content .md-checkbox-open { color: var(--muted); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <span class="project-name" id="hdr-name">—</span>
+    <span class="branch" id="hdr-branch"></span>
+    <span class="proj-path" id="hdr-path"></span>
+  </div>
+  <div id="body">
+    <div id="sidebar"></div>
+    <div id="main"></div>
+  </div>
+</div>
+
+<script>
+let _data = null;
+let _active = null;
+
+// ---------------------------------------------------------------------------
+// Fetch data
+// ---------------------------------------------------------------------------
+
+async function fetchData() {
+  const res = await fetch('/api/data');
+  _data = await res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Minimal markdown renderer
+// ---------------------------------------------------------------------------
+
+function renderMarkdown(md) {
+  if (!md) return '';
+
+  // Escape HTML
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  const lines = md.split('\\n');
+  const out = [];
+  let inPre = false;
+  let preLines = [];
+  let inUl = false;
+
+  function closePre() {
+    out.push('<pre><code>' + esc(preLines.join('\\n')) + '</code></pre>');
+    preLines = [];
+    inPre = false;
+  }
+  function closeUl() {
+    out.push('</ul>');
+    inUl = false;
+  }
+
+  function inlineFormat(s) {
+    s = esc(s);
+    // Bold
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Inline code
+    s = s.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+    // Checkboxes
+    s = s.replace(/- \[x\]/gi, '<span class="md-checkbox-done">&#x2611;</span>');
+    s = s.replace(/- \[ \]/g, '<span class="md-checkbox-open">&#x2610;</span>');
+    return s;
+  }
+
+  for (const raw of lines) {
+    const line = raw;
+    const trimmed = line.trim();
+
+    // Fenced code blocks
+    if (trimmed.startsWith('\`\`\`')) {
+      if (inPre) { closePre(); continue; }
+      if (inUl) closeUl();
+      inPre = true;
+      continue;
+    }
+    if (inPre) { preLines.push(line); continue; }
+
+    // Headings
+    if (trimmed.startsWith('### ')) {
+      if (inUl) closeUl();
+      out.push('<h3>' + inlineFormat(trimmed.slice(4)) + '</h3>');
+      continue;
+    }
+    if (trimmed.startsWith('## ')) {
+      if (inUl) closeUl();
+      out.push('<h2>' + inlineFormat(trimmed.slice(3)) + '</h2>');
+      continue;
+    }
+    if (trimmed.startsWith('# ')) {
+      if (inUl) closeUl();
+      out.push('<h1>' + inlineFormat(trimmed.slice(2)) + '</h1>');
+      continue;
+    }
+
+    // List items
+    if (/^[-*]\\s/.test(trimmed)) {
+      if (!inUl) { out.push('<ul>'); inUl = true; }
+      out.push('<li>' + inlineFormat(trimmed.slice(2)) + '</li>');
+      continue;
+    }
+
+    // Close list on non-list lines
+    if (inUl && trimmed !== '') closeUl();
+
+    // Blank line
+    if (trimmed === '') {
+      if (inUl) closeUl();
+      continue;
+    }
+
+    out.push('<p>' + inlineFormat(trimmed) + '</p>');
+  }
+
+  if (inPre) closePre();
+  if (inUl) closeUl();
+
+  return out.join('\\n');
+}
+
+// ---------------------------------------------------------------------------
+// Render header
+// ---------------------------------------------------------------------------
+
+function renderHeader() {
+  const p = _data.project;
+  document.getElementById('hdr-name').textContent = p.name;
+  const branchEl = document.getElementById('hdr-branch');
+  if (p.branch) { branchEl.textContent = p.branch; branchEl.style.display = ''; }
+  else { branchEl.textContent = '--'; branchEl.style.display = ''; }
+  document.getElementById('hdr-path').textContent = p.path;
+}
+
+// ---------------------------------------------------------------------------
+// Render sidebar
+// ---------------------------------------------------------------------------
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  const { progress, features, prd, constraints, project } = _data;
+
+  let html = '';
+
+  // Current section
+  if (progress && progress.exists) {
+    html += '<div class="sidebar-label">Current</div>';
+    const label = progress.currentFeature
+      ? (progress.currentFeature + (progress.currentTask ? ' · ' + progress.currentTask : ''))
+      : 'In Progress';
+    html += sidebarItem('current', label, null, null, progress.currentTask ? true : false);
+  }
+
+  // Features
+  if (features && features.length > 0) {
+    html += '<div class="sidebar-divider"></div>';
+    html += '<div class="sidebar-label">Features</div>';
+    for (const f of features) {
+      const pct = f.totalTasks > 0 ? Math.round((f.doneTasks / f.totalTasks) * 100) : 0;
+      const ratio = f.totalTasks > 0 ? (f.doneTasks + '/' + f.totalTasks) : '—';
+      html += sidebarItem('feature:' + f.name, f.name, ratio, pct, false);
+      html += '<div class="mini-progress"><div class="mini-progress-fill" style="width:' + pct + '%"></div></div>';
+    }
+  }
+
+  // PRD / Constraints
+  const extras = [];
+  if (prd && prd.exists) extras.push({ key: 'prd', label: 'PRD' });
+  if (constraints && constraints.exists) extras.push({ key: 'constraints', label: 'Constraints' });
+  if (extras.length) {
+    html += '<div class="sidebar-divider"></div>';
+    html += '<div class="sidebar-label">Docs</div>';
+    for (const e of extras) html += sidebarItem(e.key, e.label, null, null, false);
+  }
+
+  sb.innerHTML = html;
+
+  // Attach click events
+  sb.querySelectorAll('.sidebar-item').forEach(el => {
+    el.addEventListener('click', () => navigate(el.dataset.key));
+  });
+}
+
+function sidebarItem(key, label, ratio, pct, isCurrent) {
+  return '<div class="sidebar-item" data-key="' + key + '" id="nav-' + key.replace(/:/g,'-') + '">' +
+    '<span class="item-label">' + escHtml(label) + '</span>' +
+    (ratio ? '<span class="item-ratio">' + ratio + '</span>' : '') +
+    (isCurrent ? '<span class="current-badge">active</span>' : '') +
+    '</div>';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---------------------------------------------------------------------------
+// Navigation
+// ---------------------------------------------------------------------------
+
+function navigate(key) {
+  _active = key;
+  // Update active state in sidebar
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.key === key);
+  });
+  renderMain(key);
+}
+
+function defaultView() {
+  const { progress, features } = _data;
+  if (progress && progress.exists) return 'current';
+  if (features && features.length > 0) return 'feature:' + features[0].name;
+  if (_data.prd && _data.prd.exists) return 'prd';
+  if (_data.constraints && _data.constraints.exists) return 'constraints';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Main content rendering
+// ---------------------------------------------------------------------------
+
+function renderMain(key) {
+  const el = document.getElementById('main');
+
+  if (!_data.project.hasAiDir) {
+    el.innerHTML = '<div class="error-state">No <code>ai/</code> directory found at ' +
+      escHtml(_data.project.path) +
+      '. Run project-kickoff to initialize.</div>';
+    return;
+  }
+
+  if (key === 'current') {
+    el.innerHTML = renderCurrent();
+  } else if (key && key.startsWith('feature:')) {
+    const name = key.slice(8);
+    const feature = _data.features.find(f => f.name === name);
+    el.innerHTML = feature ? renderFeature(feature) : '<div class="error-state">Feature not found.</div>';
+  } else if (key === 'prd') {
+    el.innerHTML = renderDoc('PRD', _data.prd);
+  } else if (key === 'constraints') {
+    el.innerHTML = renderDoc('Constraints', _data.constraints);
+  } else {
+    el.innerHTML = '<div class="error-state">Nothing to display.</div>';
+  }
+
+  // Bind collapsibles
+  el.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const body = toggle.nextElementSibling;
+      const arrow = toggle.querySelector('.collapsible-arrow');
+      const isOpen = body.classList.toggle('open');
+      if (arrow) arrow.textContent = isOpen ? '▼' : '▶';
+    });
+  });
+}
+
+function renderCurrent() {
+  const { progress } = _data;
+  if (!progress || !progress.exists) return '<div class="error-state">No PROGRESS.md found.</div>';
+
+  let html = '<div class="section-heading">Current Progress</div>';
+
+  // Cards grid
+  html += '<div class="progress-cards">';
+  if (progress.currentFeature) html += infoCard('Feature', progress.currentFeature, false);
+  if (progress.currentTask) {
+    const taskLabel = progress.currentTask + (progress.currentTaskName ? ': ' + progress.currentTaskName : '');
+    html += infoCard('Task', taskLabel, true);
+  }
+  if (progress.branch) html += infoCard('Branch', progress.branch, true);
+  if (progress.status) html += infoCard('Status', progress.status, false);
+  if (progress.blockers) html += infoCard('Blockers', progress.blockers, false);
+  html += '</div>';
+
+  // Up next
+  if (progress.upNext && progress.upNext.length > 0) {
+    html += '<div class="card">';
+    html += '<div class="card-label">Up Next</div>';
+    html += '<ul class="up-next-list">';
+    for (const item of progress.upNext) {
+      html += '<li>' + escHtml(item) + '</li>';
+    }
+    html += '</ul></div>';
+  }
+
+  return html;
+}
+
+function infoCard(label, value, isCode) {
+  return '<div class="card"><div class="card-label">' + escHtml(label) + '</div>' +
+    '<div class="card-value' + (isCode ? ' code' : '') + '">' + escHtml(value) + '</div></div>';
+}
+
+function renderFeature(feature) {
+  const pct = feature.totalTasks > 0 ? Math.round((feature.doneTasks / feature.totalTasks) * 100) : 0;
+  let html = '';
+
+  // Header
+  html += '<div class="feature-header">';
+  html += '<div class="section-heading">' + escHtml(feature.name) + '</div>';
+  html += '<div class="feature-progress-bar"><div class="feature-progress-fill" style="width:' + pct + '%"></div></div>';
+  html += '<div class="feature-ratio">' + feature.doneTasks + ' / ' + feature.totalTasks + ' tasks done</div>';
+  html += '</div>';
+
+  // Requirements collapsible
+  if (feature.hasRequirements && feature.requirements) {
+    html += '<div class="collapsible-toggle"><span class="collapsible-arrow">▶</span> Requirements</div>';
+    html += '<div class="collapsible-body">';
+    html += '<div class="card"><div class="md-content">' + renderMarkdown(feature.requirements) + '</div></div>';
+    html += '</div>';
+  }
+
+  // Tasks
+  if (feature.tasks.length === 0) {
+    html += '<div class="error-state" style="padding:20px 0;">No tasks found in plan files.</div>';
+  } else {
+    for (const task of feature.tasks) {
+      html += renderTask(task);
+    }
+  }
+
+  return html;
+}
+
+function renderTask(task) {
+  const hasBody = task.subtasks.length > 0 || task.keyFiles.length > 0 || task.verification;
+  let html = '<div class="task-item">';
+
+  html += '<div class="task-header">';
+  html += '<span class="task-id">' + escHtml(task.id) + '</span>';
+  html += '<span class="task-title">' + escHtml(task.title) + '</span>';
+  html += '<span class="badge ' + (task.done ? 'done' : 'pending') + '">' + (task.done ? 'done' : 'pending') + '</span>';
+  html += '</div>';
+
+  if (hasBody) {
+    html += '<div class="task-body">';
+
+    if (task.subtasks.length > 0) {
+      html += '<div><div class="task-body-label">Subtasks</div><ul class="subtask-list">';
+      for (const s of task.subtasks) {
+        html += '<li class="subtask-item' + (s.checked ? ' checked-item' : '') + '">';
+        html += '<span class="subtask-check' + (s.checked ? ' checked' : '') + '">' + (s.checked ? '✓' : '') + '</span>';
+        html += '<span>' + escHtml(s.text) + '</span></li>';
+      }
+      html += '</ul></div>';
+    }
+
+    if (task.keyFiles.length > 0) {
+      html += '<div><div class="task-body-label">Key Files</div><ul class="key-files-list">';
+      for (const f of task.keyFiles) {
+        html += '<li>' + escHtml(f) + '</li>';
+      }
+      html += '</ul></div>';
+    }
+
+    if (task.verification) {
+      html += '<div><div class="task-body-label">Verification</div>';
+      html += '<div class="verification-block">' + escHtml(task.verification) + '</div></div>';
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderDoc(title, doc) {
+  if (!doc || !doc.exists) return '<div class="error-state">' + escHtml(title) + ' not found.</div>';
+  return '<div class="section-heading">' + escHtml(title) + '</div>' +
+    '<div class="card"><div class="md-content">' + renderMarkdown(doc.raw) + '</div></div>';
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
+async function init() {
+  try {
+    await fetchData();
+    renderHeader();
+    renderSidebar();
+    const view = defaultView();
+    if (view) navigate(view);
+    else document.getElementById('main').innerHTML = '<div class="error-state">No content available.</div>';
+  } catch (err) {
+    document.getElementById('main').innerHTML =
+      '<div class="error-state">Failed to load data: ' + escHtml(String(err)) + '</div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>`;
+}
+
+// ---------------------------------------------------------------------------
+// Port finding
+// ---------------------------------------------------------------------------
+
+function findAvailablePort(start, end) {
+  return new Promise((resolve, reject) => {
+    let port = start;
+
+    function tryPort() {
+      if (port > end) {
+        reject(new Error(`Error: No available port found between ${start} and ${end}.`));
+        return;
+      }
+      const server = http.createServer();
+      server.listen(port, '127.0.0.1', () => {
+        server.close(() => resolve(port));
+      });
+      server.on('error', () => {
+        port++;
+        tryPort();
+      });
+    }
+
+    tryPort();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// HTTP server
+// ---------------------------------------------------------------------------
+
+function startServer(projectRoot, port) {
+  const html = buildHtml();
+
+  const server = http.createServer((req, res) => {
+    if (req.method !== 'GET') {
+      res.writeHead(405);
+      res.end();
+      return;
+    }
+
+    if (req.url === '/') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
+
+    if (req.url === '/api/data') {
+      try {
+        const data = buildData(projectRoot);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: String(err) }));
+      }
+      return;
+    }
+
+    res.writeHead(404);
+    res.end();
+  });
+
+  server.listen(port, '127.0.0.1', () => {
+    const projectName = path.basename(projectRoot);
+    console.log(`ai-monitor v${VERSION}`);
+    console.log(`Project: ${projectName} (${projectRoot})`);
+    console.log(`Dashboard: http://localhost:${port}`);
+    console.log(`Press Ctrl+C to stop.`);
+
+    // Open browser
+    const url = `http://localhost:${port}`;
+    try {
+      if (process.platform === 'darwin') {
+        execSync(`open "${url}"`, { stdio: 'ignore' });
+      } else {
+        execSync(`xdg-open "${url}"`, { stdio: 'ignore' });
+      }
+    } catch {
+      // Browser open failed — not fatal
+    }
+  });
+
+  process.on('SIGINT', () => {
+    server.close(() => process.exit(0));
+  });
+  process.on('SIGTERM', () => {
+    server.close(() => process.exit(0));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Entry point
+// ---------------------------------------------------------------------------
+
+async function main() {
+  const projectRoot = resolveProjectRoot();
+  const aiDir = path.join(projectRoot, 'ai');
+
+  if (!fs.existsSync(aiDir) && !process.argv[2]) {
+    console.error(`Error: No path provided and current directory has no ai/ directory.`);
+    process.exit(1);
+  }
+
+  let port;
+  try {
+    port = await findAvailablePort(PORT_START, PORT_END);
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+
+  startServer(projectRoot, port);
+}
+
+main();
