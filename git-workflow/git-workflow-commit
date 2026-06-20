@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VALID_PREFIXES=("feat:" "fix:" "refactor:" "chore:" "docs:")
+
+usage() {
+  echo "Usage: git-workflow-commit <message>"
+  echo "Message must start with one of: ${VALID_PREFIXES[*]}"
+  echo "Example: git-workflow-commit 'fix: correct cart total calculation'"
+  exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+
+message="$*"
+
+# --- Validate prefix ---
+valid=false
+for prefix in "${VALID_PREFIXES[@]}"; do
+  if [[ "$message" == "$prefix"* ]]; then
+    valid=true
+    break
+  fi
+done
+
+if [[ "$valid" == false ]]; then
+  echo "Error: Commit message must start with one of: ${VALID_PREFIXES[*]}"
+  echo "Got: '$message'"
+  exit 1
+fi
+
+# --- Check for changes ---
+if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet HEAD 2>/dev/null && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+  echo "[commit] Nothing to commit. Working tree clean."
+  exit 0
+fi
+
+# --- Stage and commit ---
+git add -A
+git commit -m "$message"
+
+short_hash=$(git rev-parse --short HEAD)
+echo "[commit] $short_hash $message"

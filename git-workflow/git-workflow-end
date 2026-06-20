@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROTECTED_BRANCHES=("main" "master" "develop")
+
+find_base_branch() {
+  for b in "${PROTECTED_BRANCHES[@]}"; do
+    if git show-ref --verify --quiet "refs/heads/$b"; then
+      echo "$b"
+      return 0
+    fi
+  done
+  return 1
+}
+
+current_branch=$(git branch --show-current 2>/dev/null || echo "(detached)")
+
+echo "=== Git Workflow Summary ==="
+echo "  Branch: $current_branch"
+echo ""
+
+# --- Diff stat against base branch ---
+base_branch=$(find_base_branch || true)
+
+if [[ -n "$base_branch" && "$current_branch" != "$base_branch" ]]; then
+  commit_count=$(git rev-list --count "$base_branch".."$current_branch" 2>/dev/null || echo "0")
+  echo "[diff] $commit_count commit(s) ahead of '$base_branch'"
+  echo ""
+  git diff --stat "$base_branch" 2>/dev/null || true
+else
+  echo "[log] Commits on this branch:"
+  git log --oneline -10 2>/dev/null || echo "  (no commits)"
+fi
+
+echo ""
+
+# --- Current status ---
+echo "[status]"
+git status --short
+
+# --- Warn about uncommitted changes ---
+if ! git diff --quiet HEAD 2>/dev/null || ! git diff --cached --quiet HEAD 2>/dev/null || [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]]; then
+  echo ""
+  echo "[warning] Uncommitted changes detected. Consider committing or stashing before finishing."
+fi
+
+# --- Suggest next steps ---
+echo ""
+echo "[next steps]"
+echo "  - Push:  git push -u origin $current_branch"
+echo "  - PR:    Create a pull request from '$current_branch'"
+if [[ -n "$base_branch" ]]; then
+  echo "  - Merge: git checkout $base_branch && git merge $current_branch"
+fi
+echo "==========================="
