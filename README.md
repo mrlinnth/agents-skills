@@ -1,5 +1,7 @@
 # AI Agent Skills Workflow
 
+![AI Agent Skills Workflow overview](assets/intro.png)
+
 This repository contains a small set of Markdown instruction files and shell
 scripts for running structured software projects with AI coding agents.
 
