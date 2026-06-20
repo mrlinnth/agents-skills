@@ -21,7 +21,7 @@ Do not replicate their logic. See the git-workflow skill for usage.
 
 Rules that remain the agent's judgment:
 
-- Never push without explicit user permission
+- Never push without explicit user permission but when doing local merge, can push `develop`
 - Use clear, descriptive commit messages
 - Commit at logical checkpoints — not after every line, not only at the end
 
