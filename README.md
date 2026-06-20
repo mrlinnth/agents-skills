@@ -35,6 +35,112 @@ Each step produces files the next step reads. The agent does not need to
 reconstruct context from chat history because the important state is written
 into the project.
 
+## End-to-End Workflow
+
+### Day 1: Planning
+
+```text
+1. Run project-kickoff.
+   - Interview for product scope and technical stack.
+   - Research versions with the three-month staleness rule.
+   - Produce ai/CONSTRAINTS.md and ai/PRD.md.
+
+2. Run feature-planner for each feature.
+   - Phase 1 writes ai/plans/<feature>/requirements.md.
+   - Phase 2 writes numbered plan files.
+
+3. Run task-runner init.
+   - Pick the current feature.
+   - Create ai/PROGRESS.md.
+   - Set the first incomplete task.
+```
+
+### Day 1-N: Implementation
+
+```text
+1. Resume or start a task.
+2. task-runner reads constraints, PRD, requirements, plans, and progress.
+3. git-workflow-start creates or selects the work branch.
+4. The agent implements one atomic task.
+5. The agent runs the task verification command.
+6. task-runner marks the task [DONE] and updates ai/PROGRESS.md.
+7. git-workflow-commit commits the implementation and state updates.
+8. git-workflow-end prints the branch summary and suggested next steps.
+9. snapshot saves state before stopping.
+```
+
+### Switching Models
+
+```text
+1. Ask task-runner to hand off task 2.3.
+2. It writes ai/handoff/<feature>-task-2.3-<slug>.md.
+3. Open a new session with another model.
+4. Ask it to resume.
+5. The new model reads PROGRESS.md, requirements.md, plan files, and handoff.
+```
+
+### When Plans Go Stale
+
+```text
+1. Earlier features change the codebase.
+2. Re-run feature-planner Phase 2 for the affected feature.
+3. It reads the existing requirements, scans the current codebase, preserves
+   [DONE] tasks, and regenerates incomplete tasks.
+```
+
+## Installation
+
+These skills are plain directories containing `SKILL.md` files. Install them
+where your agent expects local skills.
+
+> I use my Laravel and React background in the skills context. Feel free to update them to match your expertise.
+
+For Codex:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R project-kickoff feature-planner task-runner git-workflow ~/.agents/skills/
+```
+
+For Claude Code `~/.claude/skills`, copy them there instead:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R project-kickoff feature-planner task-runner git-workflow ~/.claude/skills/
+```
+
+> Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
+> `ln -s /home/yan/.agents/skills /home/yan/.claude/skills`
+
+Install the git workflow scripts onto your `PATH`:
+
+```bash
+mkdir -p ~/.local/bin
+cp git-workflow/git-workflow-start ~/.local/bin/
+cp git-workflow/git-workflow-commit ~/.local/bin/
+cp git-workflow/git-workflow-end ~/.local/bin/
+chmod +x ~/.local/bin/git-workflow-*
+```
+
+Make sure `~/.local/bin` is on your `PATH`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Add that line to your shell profile if needed.
+
+Verify the scripts:
+
+```bash
+git-workflow-start
+git-workflow-commit
+git-workflow-end
+```
+
+The first two commands should print usage text when called without the required
+arguments. `git-workflow-end` should be run inside a git repository.
+
 ## Repository Layout
 
 This repo currently stores each skill as a top-level directory:
@@ -309,107 +415,6 @@ Conventions:
 - Dependencies should be stated explicitly, for example: `Depends on: Task 1.2`.
 - Tasks should be atomic enough to complete in one AI coding session.
 
-## End-to-End Workflow
-
-### Day 1: Planning
-
-```text
-1. Run project-kickoff.
-   - Interview for product scope and technical stack.
-   - Research versions with the three-month staleness rule.
-   - Produce ai/CONSTRAINTS.md and ai/PRD.md.
-
-2. Run feature-planner for each feature.
-   - Phase 1 writes ai/plans/<feature>/requirements.md.
-   - Phase 2 writes numbered plan files.
-
-3. Run task-runner init.
-   - Pick the current feature.
-   - Create ai/PROGRESS.md.
-   - Set the first incomplete task.
-```
-
-### Day 1-N: Implementation
-
-```text
-1. Resume or start a task.
-2. task-runner reads constraints, PRD, requirements, plans, and progress.
-3. git-workflow-start creates or selects the work branch.
-4. The agent implements one atomic task.
-5. The agent runs the task verification command.
-6. task-runner marks the task [DONE] and updates ai/PROGRESS.md.
-7. git-workflow-commit commits the implementation and state updates.
-8. git-workflow-end prints the branch summary and suggested next steps.
-9. snapshot saves state before stopping.
-```
-
-### Switching Models
-
-```text
-1. Ask task-runner to hand off task 2.3.
-2. It writes ai/handoff/<feature>-task-2.3-<slug>.md.
-3. Open a new session with another model.
-4. Ask it to resume.
-5. The new model reads PROGRESS.md, requirements.md, plan files, and handoff.
-```
-
-### When Plans Go Stale
-
-```text
-1. Earlier features change the codebase.
-2. Re-run feature-planner Phase 2 for the affected feature.
-3. It reads the existing requirements, scans the current codebase, preserves
-   [DONE] tasks, and regenerates incomplete tasks.
-```
-
-## Installation
-
-These skills are plain directories containing `SKILL.md` files. Install them
-where your agent expects local skills.
-
-For Codex-style local skills:
-
-```bash
-mkdir -p ~/.agents/skills
-cp -R project-kickoff feature-planner task-runner git-workflow ~/.agents/skills/
-```
-
-For agents that use `~/.codex/skills`, copy them there instead:
-
-```bash
-mkdir -p ~/.codex/skills
-cp -R project-kickoff feature-planner task-runner git-workflow ~/.codex/skills/
-```
-
-Install the git workflow scripts onto your `PATH`:
-
-```bash
-mkdir -p ~/.local/bin
-cp git-workflow/git-workflow-start ~/.local/bin/
-cp git-workflow/git-workflow-commit ~/.local/bin/
-cp git-workflow/git-workflow-end ~/.local/bin/
-chmod +x ~/.local/bin/git-workflow-*
-```
-
-Make sure `~/.local/bin` is on your `PATH`:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Add that line to your shell profile if needed.
-
-Verify the scripts:
-
-```bash
-git-workflow-start
-git-workflow-commit
-git-workflow-end
-```
-
-The first two commands should print usage text when called without the required
-arguments. `git-workflow-end` should be run inside a git repository.
-
 ## FAQ
 
 ### Do I need all four skills?
@@ -443,7 +448,7 @@ The bash scripts have no AI dependency.
 Usually gitignore `ai/PROGRESS.md` because it is current local state and gets
 overwritten often. Whether to commit the rest of `ai/` depends on the team.
 
-A common team setup is:
+A common team `.gitignore` setup is:
 
 ```gitignore
 ai/PROGRESS.md
