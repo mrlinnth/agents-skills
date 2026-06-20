@@ -81,13 +81,20 @@ Product Summary
 Product: [one-line description]
 Users: [who uses it]
 Problem: [what it solves]
-Core features:
-  - [feature]: [one-line description]
-  - [feature]: [one-line description]
-  - ...
 Out of scope: [what it does not do]
 Success: [how we know it works]
 References: [any references, or "none"]
+
+Core features:
+  [Feature name]
+    Scope: [2-3 sentences]
+    Dependencies: [feature names, or "None"]
+    Priority: [number or level]
+
+  [Feature name]
+    Scope: [2-3 sentences]
+    Dependencies: [feature names, or "None"]
+    Priority: [number or level]
 
 Proposed Stack & Versions
 ─────────────────────────
@@ -148,8 +155,15 @@ Confirmed by developer: yes
 
 ## Core Features
 
-- **[Feature name]**: [one-line description]
-- **[Feature name]**: [one-line description]
+### [Feature name]
+**Scope:** [2-3 sentences describing what this feature covers — enough for feature-planner to start an informed interview]
+**Dependencies:** [feature names that must be built first, or "None"]
+**Priority:** [1 / 2 / 3 ... or high / medium / low]
+
+### [Feature name]
+**Scope:** [2-3 sentences]
+**Dependencies:** [feature names, or "None"]
+**Priority:** [number or level]
 
 ## Out of Scope
 [What this product explicitly does not do — bullet list]
