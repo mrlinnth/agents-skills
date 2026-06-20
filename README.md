@@ -99,14 +99,14 @@ For Codex:
 
 ```bash
 mkdir -p ~/.agents/skills
-cp -R project-kickoff feature-planner task-runner git-workflow ~/.agents/skills/
+cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/git-workflow ~/.agents/skills/
 ```
 
 For Claude Code `~/.claude/skills`, copy them there instead:
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R project-kickoff feature-planner task-runner git-workflow ~/.claude/skills/
+cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/git-workflow ~/.claude/skills/
 ```
 
 > Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
@@ -116,9 +116,9 @@ Install the git workflow scripts onto your `PATH`:
 
 ```bash
 mkdir -p ~/.local/bin
-cp git-workflow/git-workflow-start ~/.local/bin/
-cp git-workflow/git-workflow-commit ~/.local/bin/
-cp git-workflow/git-workflow-end ~/.local/bin/
+cp scripts/git-workflow-start ~/.local/bin/
+cp scripts/git-workflow-commit ~/.local/bin/
+cp scripts/git-workflow-end ~/.local/bin/
 chmod +x ~/.local/bin/git-workflow-*
 ```
 
@@ -143,20 +143,24 @@ arguments. `git-workflow-end` should be run inside a git repository.
 
 ## Repository Layout
 
-This repo currently stores each skill as a top-level directory:
+This repo currently stores each skill under `skills/`, with executable helpers
+under `scripts/`:
 
 ```text
 .
 |-- README.md
-|-- project-kickoff/
-|   `-- SKILL.md
-|-- feature-planner/
-|   `-- SKILL.md
-|-- task-runner/
-|   |-- SKILL.md
-|   `-- HANDOFF.md
-`-- git-workflow/
-    |-- SKILL.md
+|-- skills/
+|   |-- project-kickoff/
+|   |   `-- SKILL.md
+|   |-- feature-planner/
+|   |   `-- SKILL.md
+|   |-- task-runner/
+|   |   |-- SKILL.md
+|   |   `-- HANDOFF.md
+|   `-- git-workflow/
+|       `-- SKILL.md
+`-- scripts/
+    |-- ai-monitor
     |-- git-workflow-start
     |-- git-workflow-commit
     `-- git-workflow-end
