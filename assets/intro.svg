@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1320" viewBox="0 0 1600 1320" role="img" aria-labelledby="title desc">
   <title id="title">AI Agent Skills Workflow</title>
-  <desc id="desc">A one-page infographic showing how project-kickoff, feature-planner, task-runner, reviewer, and git-workflow create durable context for AI coding agents.</desc>
+  <desc id="desc">A one-page infographic showing how project-kickoff, prototype, feature-planner, task-runner, reviewer, and git-workflow create durable context for AI coding agents.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -67,8 +67,8 @@
   </defs>
 
   <!-- Background -->
-  <rect width="1600" height="940" fill="url(#bg)"/>
-  <rect x="900" y="0" width="700" height="320" fill="url(#dotgrid)"/>
+  <rect width="1600" height="1320" fill="url(#bg)"/>
+  <rect x="900" y="0" width="700" height="420" fill="url(#dotgrid)"/>
 
   <!-- Top accent line — indigo only, no amber segment -->
   <rect x="0" y="0" width="1600" height="4" fill="#1e2d5e"/>
@@ -77,8 +77,8 @@
   <g transform="translate(80 52)">
     <text class="eyebrow" x="2" y="0">REPO OVERVIEW</text>
     <text class="hero-title" x="0" y="64" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="60">AI Agent Skills Workflow</text>
-    <text class="hero-sub" x="2" y="102">A repeatable file-based system for AI coding agents —</text>
-    <text class="hero-sub" x="2" y="128">plan, execute, review, and resume without losing state.</text>
+    <text class="hero-sub" x="2" y="102">A repeatable six-skill system for AI coding agents —</text>
+    <text class="hero-sub" x="2" y="128">plan, prototype, execute, review, and resume without losing state.</text>
   </g>
 
   <!-- Why card — no left bar -->
@@ -86,24 +86,28 @@
     <rect x="0" y="0" width="462" height="136" rx="16" fill="#1e2d5e" filter="url(#elevated-shadow)"/>
     <text class="why-title" x="24" y="38" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="13">WHY THIS REPO EXISTS</text>
     <text class="why-body" x="24" y="72">Project state lives in files, not chat history.</text>
-    <text class="why-body" x="24" y="98">Work spans sessions, agents, and code reviews</text>
+    <text class="why-body" x="24" y="98">Work spans sessions, agents, and prototypes</text>
     <text class="why-body" x="24" y="124">without reconstruction.</text>
   </g>
 
   <!-- Divider -->
   <line x1="80" y1="215" x2="1520" y2="215" stroke="#c8cfe8" stroke-width="1"/>
 
-  <!-- ═══════════════ FLOW LINE ═══════════════ -->
-  <line x1="146" y1="316" x2="1454" y2="316" stroke="#c8cfe8" stroke-width="2" stroke-dasharray="6 4"/>
+  <!-- ═══════════════ FLOW LINES ═══════════════ -->
+  <line x1="146" y1="316" x2="882" y2="316" stroke="#c8cfe8" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="146" y1="626" x2="882" y2="626" stroke="#c8cfe8" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="746" y1="502" x2="746" y2="540" stroke="#6b7db3" stroke-width="2.5"/>
+  <polygon points="738,532 754,532 746,542" fill="#6b7db3"/>
 
   <!-- ═══════════════ STEP CARDS ═══════════════ -->
   <!--
     Color system:
     A project-kickoff  #3d7a6f  sage green     icon bg #eaf4f2
-    B feature-planner  #6457a6  indigo violet  icon bg #edeaf7
-    C task-runner      #e8a030  amber          icon bg #fdf3e3
-    D reviewer         #c0544a  terracotta     icon bg #f5e8e7
-    E git-workflow     #3a6fa8  steel blue     icon bg #e5eef7
+    B prototype        #4f8f8a  muted teal     icon bg #e7f4f3
+    C feature-planner  #6457a6  indigo violet  icon bg #edeaf7
+    D task-runner      #e8a030  amber          icon bg #fdf3e3
+    E reviewer         #c0544a  terracotta     icon bg #f5e8e7
+    F git-workflow     #3a6fa8  steel blue     icon bg #e5eef7
   -->
 
   <!-- 01 project-kickoff — A #3d7a6f -->
@@ -123,11 +127,28 @@
   <!-- Arrow 1→2 -->
   <polygon points="326,308 342,316 326,324" fill="#6b7db3"/>
 
-  <!-- 02 feature-planner — B #6457a6 -->
+  <!-- 02 prototype — B #4f8f8a -->
   <g transform="translate(354 230)">
     <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
-    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#6457a6"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#4f8f8a"/>
     <text class="step-num" x="140" y="88">02</text>
+    <circle cx="52" cy="62" r="28" fill="#e7f4f3"/>
+    <rect x="40" y="50" width="24" height="18" rx="4" fill="none" stroke="#4f8f8a" stroke-width="4"/>
+    <rect x="45" y="57" width="24" height="18" rx="4" fill="none" stroke="#4f8f8a" stroke-width="4" opacity="0.6"/>
+    <text class="step-name" x="20" y="124">prototype</text>
+    <text class="step-body" x="20" y="152">Shapes the UI, layout,</text>
+    <text class="step-body" x="20" y="173">and interactions before</text>
+    <text class="step-body" x="20" y="194">planning is locked in.</text>
+  </g>
+
+  <!-- Arrow 2→3 -->
+  <polygon points="600,308 616,316 600,324" fill="#6b7db3"/>
+
+  <!-- 03 feature-planner — C #6457a6 -->
+  <g transform="translate(628 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#6457a6"/>
+    <text class="step-num" x="140" y="88">03</text>
     <circle cx="52" cy="62" r="28" fill="#edeaf7"/>
     <line x1="38" y1="51" x2="66" y2="51" stroke="#6457a6" stroke-width="5" stroke-linecap="round"/>
     <line x1="38" y1="63" x2="66" y2="63" stroke="#6457a6" stroke-width="5" stroke-linecap="round"/>
@@ -138,14 +159,11 @@
     <text class="step-body" x="20" y="194">task plans.</text>
   </g>
 
-  <!-- Arrow 2→3 -->
-  <polygon points="600,308 616,316 600,324" fill="#6b7db3"/>
-
-  <!-- 03 task-runner — C #e8a030 -->
-  <g transform="translate(628 230)">
+  <!-- 04 task-runner — D #e8a030 -->
+  <g transform="translate(80 540)">
     <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#e8a030"/>
-    <text class="step-num" x="140" y="88">03</text>
+    <text class="step-num" x="140" y="88">04</text>
     <circle cx="52" cy="62" r="28" fill="#fdf3e3"/>
     <polygon points="44,50 44,74 68,62" fill="#e8a030"/>
     <text class="step-name" x="20" y="124">task-runner</text>
@@ -154,14 +172,14 @@
     <text class="step-body" x="20" y="194">and writes handoffs.</text>
   </g>
 
-  <!-- Arrow 3→4 -->
-  <polygon points="874,308 890,316 874,324" fill="#6b7db3"/>
+  <!-- Arrow 4→5 -->
+  <polygon points="326,618 342,626 326,634" fill="#6b7db3"/>
 
-  <!-- 04 reviewer — D #c0544a -->
-  <g transform="translate(902 230)">
+  <!-- 05 reviewer — E #c0544a -->
+  <g transform="translate(354 540)">
     <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#c0544a"/>
-    <text class="step-num" x="140" y="88">04</text>
+    <text class="step-num" x="140" y="88">05</text>
     <circle cx="52" cy="62" r="28" fill="#f5e8e7"/>
     <circle cx="49" cy="59" r="11" fill="none" stroke="#c0544a" stroke-width="5"/>
     <line x1="57" y1="67" x2="67" y2="77" stroke="#c0544a" stroke-width="5" stroke-linecap="round"/>
@@ -171,14 +189,14 @@
     <text class="step-body" x="20" y="194">then drafts the PR.</text>
   </g>
 
-  <!-- Arrow 4→5 -->
-  <polygon points="1148,308 1164,316 1148,324" fill="#6b7db3"/>
+  <!-- Arrow 5→6 -->
+  <polygon points="600,618 616,626 600,634" fill="#6b7db3"/>
 
-  <!-- 05 git-workflow — E #3a6fa8 -->
-  <g transform="translate(1176 230)">
+  <!-- 06 git-workflow — F #3a6fa8 -->
+  <g transform="translate(628 540)">
     <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#3a6fa8"/>
-    <text class="step-num" x="140" y="88">05</text>
+    <text class="step-num" x="140" y="88">06</text>
     <circle cx="52" cy="62" r="28" fill="#e5eef7"/>
     <circle cx="44" cy="52" r="5" fill="#3a6fa8"/>
     <circle cx="60" cy="52" r="5" fill="#3a6fa8"/>
@@ -193,16 +211,16 @@
 
   <!-- ═══════════════ SHARED MEMORY SECTION ═══════════════ -->
 
-  <text class="section-label" x="80" y="558">FILES BECOME THE SHARED MEMORY</text>
-  <line x1="80" y1="570" x2="1520" y2="570" stroke="#c8cfe8" stroke-width="1"/>
-  <text x="80" y="594" style="font-size:14px; fill:#8a96bc; font-family: Inter, Helvetica Neue, Arial, sans-serif;">
-    Each skill writes files that the next can read without reconstructing chat history. Files are ordered by when they are created.
+  <text class="section-label" x="80" y="858">FILES BECOME THE SHARED MEMORY</text>
+  <line x1="80" y1="870" x2="1520" y2="870" stroke="#c8cfe8" stroke-width="1"/>
+  <text x="80" y="894" style="font-size:14px; fill:#8a96bc; font-family: Inter, Helvetica Neue, Arial, sans-serif;">
+    Each skill writes files that the next can read without reconstructing chat history. Prototype adds the visual shell before planning begins.
   </text>
 
-  <!-- File cards: x 80 / 368 / 656 / 944 / 1232, width 260 -->
+  <!-- File cards: top row x 80 / 368 / 656 / 944; bottom row x 80 / 368 / 656; width 260 -->
 
   <!-- ai/PRD.md — A #3d7a6f -->
-  <g transform="translate(80 614)">
+  <g transform="translate(80 930)">
     <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#3d7a6f"/>
     <text class="file-name" x="20" y="34">ai/PRD.md</text>
@@ -212,7 +230,7 @@
   </g>
 
   <!-- ai/CONSTRAINTS.md — A #3d7a6f -->
-  <g transform="translate(368 614)">
+  <g transform="translate(368 930)">
     <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#3d7a6f"/>
     <text class="file-name" x="20" y="34">ai/CONSTRAINTS.md</text>
@@ -221,8 +239,28 @@
     <text class="file-by" x="20" y="102">WRITTEN BY project-kickoff</text>
   </g>
 
-  <!-- ai/plans/* — B #6457a6 -->
-  <g transform="translate(656 614)">
+  <!-- ai/prototype/index.html — B #4f8f8a -->
+  <g transform="translate(656 930)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#4f8f8a"/>
+    <text class="file-name" x="20" y="34">ai/prototype/index.html</text>
+    <text class="file-desc" x="20" y="58">Static interactive UI</text>
+    <text class="file-desc" x="20" y="76">prototype for review.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY prototype</text>
+  </g>
+
+  <!-- ai/prototype/blueprint.md — B #4f8f8a -->
+  <g transform="translate(944 930)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#4f8f8a"/>
+    <text class="file-name" x="20" y="34">ai/prototype/blueprint.md</text>
+    <text class="file-desc" x="20" y="58">Machine-readable screen</text>
+    <text class="file-desc" x="20" y="76">map for feature planning.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY prototype</text>
+  </g>
+
+  <!-- ai/plans/* — C #6457a6 -->
+  <g transform="translate(80 1078)">
     <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#6457a6"/>
     <text class="file-name" x="20" y="34">ai/plans/*</text>
@@ -231,8 +269,8 @@
     <text class="file-by" x="20" y="102">WRITTEN BY feature-planner</text>
   </g>
 
-  <!-- ai/PROGRESS.md — C #e8a030 -->
-  <g transform="translate(944 614)">
+  <!-- ai/PROGRESS.md — D #e8a030 -->
+  <g transform="translate(368 1078)">
     <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#e8a030"/>
     <text class="file-name" x="20" y="34">ai/PROGRESS.md</text>
@@ -241,8 +279,8 @@
     <text class="file-by" x="20" y="102">WRITTEN BY task-runner</text>
   </g>
 
-  <!-- ai/handoff/* — C #e8a030 -->
-  <g transform="translate(1232 614)">
+  <!-- ai/handoff/* — D #e8a030 -->
+  <g transform="translate(656 1078)">
     <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#e8a030"/>
     <text class="file-name" x="20" y="34">ai/handoff/*</text>
@@ -252,11 +290,10 @@
   </g>
 
   <!-- ═══════════════ FOOTER — no left bar ═══════════════ -->
-  <g transform="translate(80 782)">
+  <g transform="translate(80 1248)">
     <rect x="0" y="0" width="1440" height="64" rx="12" fill="#1e2d5e"/>
     <text class="footer-text" x="720" y="39" text-anchor="middle">
-      Plan once.  Execute in small units.  Review before merge.  Commit checkpoints.  Resume from files.
+      Plan once.  Prototype early.  Execute in small units.  Review before merge.  Commit checkpoints.  Resume from files.
     </text>
   </g>
-
 </svg>
