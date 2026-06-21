@@ -21,37 +21,38 @@
     </pattern>
 
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@700&amp;display=swap');
       text { font-family: "Inter", "Helvetica Neue", "Arial", sans-serif; }
       .eyebrow {
-        font-size: 13px; font-weight: 700; letter-spacing: 3px; fill: #6b7db3;
+        font-size: 13px; font-weight: 700; letter-spacing: 2.5px; fill: #6b7db3;
       }
       .hero-title {
-        font-size: 60px; font-weight: 800; fill: #1e2d5e; letter-spacing: -1.5px;
+        font-size: 60px; font-weight: 700; fill: #1e2d5e;
       }
       .hero-sub {
-        font-size: 20px; font-weight: 400; fill: #5a6a96; letter-spacing: -0.2px;
+        font-size: 20px; font-weight: 400; fill: #5a6a96;
       }
       .why-title {
-        font-size: 15px; font-weight: 700; letter-spacing: 1.5px; fill: #f0f2f7;
+        font-size: 13px; font-weight: 700; letter-spacing: 1px; fill: #f0f2f7;
       }
       .why-body {
         font-size: 17px; fill: #c8d0e8;
       }
       .step-num {
-        font-size: 88px; font-weight: 900; fill: #1e2d5e; opacity: 0.06; letter-spacing: -3px;
+        font-size: 88px; font-weight: 700; fill: #1e2d5e; opacity: 0.06;
       }
       .step-name {
-        font-size: 20px; font-weight: 800; fill: #1e2d5e; letter-spacing: -0.4px;
+        font-size: 20px; font-weight: 700; fill: #1e2d5e;
       }
       .step-body {
         font-size: 14.5px; font-weight: 400; fill: #5a6a96;
       }
       .section-label {
-        font-size: 12px; font-weight: 700; letter-spacing: 3px; fill: #8a96bc;
+        font-size: 12px; font-weight: 700; letter-spacing: 2.5px; fill: #8a96bc;
       }
       .file-name {
         font-size: 14px; font-weight: 700; fill: #1e2d5e;
-        font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+        font-family: "JetBrains Mono", "SF Mono", "Fira Code", "Consolas", monospace;
       }
       .file-desc {
         font-size: 13px; fill: #6b7db3;
@@ -60,7 +61,7 @@
         font-size: 11px; font-weight: 600; fill: #a0aac8; letter-spacing: 0.5px;
       }
       .footer-text {
-        font-size: 18px; font-weight: 700; fill: #f0f2f7; letter-spacing: -0.3px;
+        font-size: 18px; font-weight: 700; fill: #f0f2f7;
       }
     </style>
   </defs>
@@ -75,7 +76,7 @@
   <!-- ═══════════════ HEADER ═══════════════ -->
   <g transform="translate(80 52)">
     <text class="eyebrow" x="2" y="0">REPO OVERVIEW</text>
-    <text class="hero-title" x="0" y="64">AI Agent Skills Workflow</text>
+    <text class="hero-title" x="0" y="64" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="60">AI Agent Skills Workflow</text>
     <text class="hero-sub" x="2" y="102">A repeatable file-based system for AI coding agents —</text>
     <text class="hero-sub" x="2" y="128">plan, execute, review, and resume without losing state.</text>
   </g>
@@ -83,7 +84,7 @@
   <!-- Why card — no left bar -->
   <g transform="translate(1058 44)">
     <rect x="0" y="0" width="462" height="136" rx="16" fill="#1e2d5e" filter="url(#elevated-shadow)"/>
-    <text class="why-title" x="24" y="38">WHY THIS REPO EXISTS</text>
+    <text class="why-title" x="24" y="38" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="13">WHY THIS REPO EXISTS</text>
     <text class="why-body" x="24" y="72">Project state lives in files, not chat history.</text>
     <text class="why-body" x="24" y="98">Work spans sessions, agents, and code reviews</text>
     <text class="why-body" x="24" y="124">without reconstruction.</text>
