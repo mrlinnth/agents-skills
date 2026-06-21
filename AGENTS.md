@@ -19,6 +19,8 @@ Git mechanics are handled by three bash scripts on `$PATH`:
 `git-workflow-start`, `git-workflow-commit`, `git-workflow-end`.
 Do not replicate their logic. See the git-workflow skill for usage.
 
+If the script fails with a permission error, run the git commands from the script output individually to trigger sandbox approval.
+
 Rules that remain the agent's judgment:
 
 - Never push without explicit user permission but when doing local merge, can push `develop`
