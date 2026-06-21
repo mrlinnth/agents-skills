@@ -1,210 +1,261 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img" aria-labelledby="title desc">
   <title id="title">AI Agent Skills Workflow</title>
   <desc id="desc">A one-page infographic showing how project-kickoff, feature-planner, task-runner, reviewer, and git-workflow create durable context for AI coding agents.</desc>
+
   <defs>
-    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fbfcf8"/>
-      <stop offset="0.55" stop-color="#f3f7f1"/>
-      <stop offset="1" stop-color="#eef5f6"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0f2f7"/>
+      <stop offset="1" stop-color="#e8ebf4"/>
     </linearGradient>
-    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#23303a" flood-opacity="0.12"/>
+
+    <filter id="card-shadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#1e2d5e" flood-opacity="0.08"/>
     </filter>
-    <pattern id="pinstripe" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect width="28" height="28" fill="none"/>
-      <path d="M0 0H28" stroke="#d9e4df" stroke-width="1" opacity="0.55"/>
+
+    <filter id="elevated-shadow" x="-15%" y="-15%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#1e2d5e" flood-opacity="0.18"/>
+    </filter>
+
+    <pattern id="dotgrid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1.5" cy="1.5" r="1.5" fill="#c5cae0" opacity="0.5"/>
     </pattern>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
-      <path d="M0 0L10 5L0 10Z" fill="#394653"/>
-    </marker>
+
     <style>
-      text {
-        font-family: "Noto Sans", "DejaVu Sans", sans-serif;
-        fill: #22313b;
-      }
+      text { font-family: "Inter", "Helvetica Neue", "Arial", sans-serif; }
       .eyebrow {
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 0;
-        fill: #4c6b62;
+        font-size: 13px; font-weight: 700; letter-spacing: 3px; fill: #6b7db3;
       }
-      .title {
-        font-size: 66px;
-        font-weight: 800;
+      .hero-title {
+        font-size: 60px; font-weight: 800; fill: #1e2d5e; letter-spacing: -1.5px;
       }
-      .subtitle {
-        font-size: 26px;
-        fill: #50616a;
+      .hero-sub {
+        font-size: 20px; font-weight: 400; fill: #5a6a96; letter-spacing: -0.2px;
       }
-      .panel-title {
-        font-size: 30px;
-        font-weight: 800;
+      .why-title {
+        font-size: 15px; font-weight: 700; letter-spacing: 1.5px; fill: #f0f2f7;
       }
-      .panel-copy {
-        font-size: 20px;
-        fill: #52636b;
+      .why-body {
+        font-size: 17px; fill: #c8d0e8;
       }
-      .file-label {
-        font-size: 20px;
-        font-weight: 700;
+      .step-num {
+        font-size: 88px; font-weight: 900; fill: #1e2d5e; opacity: 0.06; letter-spacing: -3px;
       }
-      .file-copy {
-        font-size: 17px;
-        fill: #5d6970;
+      .step-name {
+        font-size: 20px; font-weight: 800; fill: #1e2d5e; letter-spacing: -0.4px;
       }
-      .small {
-        font-size: 17px;
-        fill: #617078;
+      .step-body {
+        font-size: 14.5px; font-weight: 400; fill: #5a6a96;
       }
-      .mono {
-        font-family: "Noto Sans Mono", "DejaVu Sans Mono", monospace;
-        font-size: 17px;
-        fill: #4b5960;
+      .section-label {
+        font-size: 12px; font-weight: 700; letter-spacing: 3px; fill: #8a96bc;
+      }
+      .file-name {
+        font-size: 14px; font-weight: 700; fill: #1e2d5e;
+        font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      }
+      .file-desc {
+        font-size: 13px; fill: #6b7db3;
+      }
+      .file-by {
+        font-size: 11px; font-weight: 600; fill: #a0aac8; letter-spacing: 0.5px;
+      }
+      .footer-text {
+        font-size: 18px; font-weight: 700; fill: #f0f2f7; letter-spacing: -0.3px;
       }
     </style>
   </defs>
 
-  <rect x="0" y="0" width="1600" height="1000" fill="#f5f8f3"/>
+  <!-- Background -->
+  <rect width="1600" height="940" fill="url(#bg)"/>
+  <rect x="900" y="0" width="700" height="320" fill="url(#dotgrid)"/>
 
-  <circle cx="1385" cy="138" r="120" fill="#e5f2ec" opacity="0.9"/>
-  <circle cx="1455" cy="223" r="42" fill="#f7d977" opacity="0.55"/>
-  <path d="M118 850C218 782 303 788 384 846C480 915 571 903 660 836" fill="none" stroke="#dbe9e4" stroke-width="42" stroke-linecap="round" opacity="0.72"/>
+  <!-- Top accent line — indigo only, no amber segment -->
+  <rect x="0" y="0" width="1600" height="4" fill="#1e2d5e"/>
 
-  <g transform="translate(92 72)">
-    <text class="eyebrow" x="0" y="0">REPO OVERVIEW</text>
-    <text class="title" x="0" y="72">AI Agent Skills Workflow</text>
-    <text class="subtitle" x="0" y="120">A repeatable file-based system for AI coding agents.</text>
-    <text class="subtitle" x="0" y="154">Plan features, run tasks, review changes, and resume without losing state.</text>
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <g transform="translate(80 52)">
+    <text class="eyebrow" x="2" y="0">REPO OVERVIEW</text>
+    <text class="hero-title" x="0" y="64">AI Agent Skills Workflow</text>
+    <text class="hero-sub" x="2" y="102">A repeatable file-based system for AI coding agents —</text>
+    <text class="hero-sub" x="2" y="128">plan, execute, review, and resume without losing state.</text>
   </g>
 
-  <g transform="translate(1040 82)">
-    <rect x="0" y="0" width="450" height="128" rx="18" fill="#22313b" filter="url(#soft-shadow)"/>
-    <text x="32" y="42" fill="#f8fbf8" font-size="22" font-weight="800">Why this repo exists</text>
-    <text x="32" y="78" fill="#dbe7df" font-size="19">Important project state is written to files,</text>
-    <text x="32" y="106" fill="#dbe7df" font-size="19">so work can span sessions and reviews.</text>
+  <!-- Why card — no left bar -->
+  <g transform="translate(1058 44)">
+    <rect x="0" y="0" width="462" height="136" rx="16" fill="#1e2d5e" filter="url(#elevated-shadow)"/>
+    <text class="why-title" x="24" y="38">WHY THIS REPO EXISTS</text>
+    <text class="why-body" x="24" y="72">Project state lives in files, not chat history.</text>
+    <text class="why-body" x="24" y="98">Work spans sessions, agents, and code reviews</text>
+    <text class="why-body" x="24" y="124">without reconstruction.</text>
   </g>
 
-  <g transform="translate(102 250)">
-    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="252" height="14" rx="7" fill="#2f9d8c"/>
-    <circle cx="54" cy="72" r="32" fill="#dff3ee"/>
-    <path d="M41 72H67M54 59V85" stroke="#1f7f71" stroke-width="7" stroke-linecap="round"/>
-    <text class="panel-title" x="31" y="124">project-kickoff</text>
-    <text class="panel-copy" x="31" y="164">Captures product scope,</text>
-    <text class="panel-copy" x="31" y="192">users, stack, versions,</text>
-    <text class="panel-copy" x="31" y="220">and verification rules.</text>
-    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
+  <!-- Divider -->
+  <line x1="80" y1="215" x2="1520" y2="215" stroke="#c8cfe8" stroke-width="1"/>
+
+  <!-- ═══════════════ FLOW LINE ═══════════════ -->
+  <line x1="146" y1="316" x2="1454" y2="316" stroke="#c8cfe8" stroke-width="2" stroke-dasharray="6 4"/>
+
+  <!-- ═══════════════ STEP CARDS ═══════════════ -->
+  <!--
+    Color system:
+    A project-kickoff  #3d7a6f  sage green     icon bg #eaf4f2
+    B feature-planner  #6457a6  indigo violet  icon bg #edeaf7
+    C task-runner      #e8a030  amber          icon bg #fdf3e3
+    D reviewer         #c0544a  terracotta     icon bg #f5e8e7
+    E git-workflow     #3a6fa8  steel blue     icon bg #e5eef7
+  -->
+
+  <!-- 01 project-kickoff — A #3d7a6f -->
+  <g transform="translate(80 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#3d7a6f"/>
+    <text class="step-num" x="140" y="88">01</text>
+    <circle cx="52" cy="62" r="28" fill="#eaf4f2"/>
+    <line x1="52" y1="50" x2="52" y2="74" stroke="#3d7a6f" stroke-width="5.5" stroke-linecap="round"/>
+    <line x1="40" y1="62" x2="64" y2="62" stroke="#3d7a6f" stroke-width="5.5" stroke-linecap="round"/>
+    <text class="step-name" x="20" y="124">project-kickoff</text>
+    <text class="step-body" x="20" y="152">Captures product scope,</text>
+    <text class="step-body" x="20" y="173">users, stack, versions,</text>
+    <text class="step-body" x="20" y="194">and verification rules.</text>
   </g>
 
-  <g transform="translate(388 250)">
-    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="252" height="14" rx="7" fill="#cf695e"/>
-    <circle cx="54" cy="72" r="32" fill="#f8e6e2"/>
-    <path d="M40 61H69M40 73H69M40 85H58" stroke="#a9443a" stroke-width="7" stroke-linecap="round"/>
-    <text class="panel-title" x="31" y="124">feature-planner</text>
-    <text class="panel-copy" x="31" y="164">Turns a feature idea</text>
-    <text class="panel-copy" x="31" y="192">into requirements and</text>
-    <text class="panel-copy" x="31" y="220">ordered task plans.</text>
-    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
+  <!-- Arrow 1→2 -->
+  <polygon points="326,308 342,316 326,324" fill="#6b7db3"/>
+
+  <!-- 02 feature-planner — B #6457a6 -->
+  <g transform="translate(354 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#6457a6"/>
+    <text class="step-num" x="140" y="88">02</text>
+    <circle cx="52" cy="62" r="28" fill="#edeaf7"/>
+    <line x1="38" y1="51" x2="66" y2="51" stroke="#6457a6" stroke-width="5" stroke-linecap="round"/>
+    <line x1="38" y1="63" x2="66" y2="63" stroke="#6457a6" stroke-width="5" stroke-linecap="round"/>
+    <line x1="38" y1="75" x2="55" y2="75" stroke="#6457a6" stroke-width="5" stroke-linecap="round"/>
+    <text class="step-name" x="20" y="124">feature-planner</text>
+    <text class="step-body" x="20" y="152">Turns a feature idea into</text>
+    <text class="step-body" x="20" y="173">requirements and ordered</text>
+    <text class="step-body" x="20" y="194">task plans.</text>
   </g>
 
-  <g transform="translate(674 250)">
-    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="252" height="14" rx="7" fill="#d6a739"/>
-    <circle cx="54" cy="72" r="32" fill="#fbf0cf"/>
-    <path d="M39 71L50 82L70 58" stroke="#9a741c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <text class="panel-title" x="31" y="124">task-runner</text>
-    <text class="panel-copy" x="31" y="164">Executes one task,</text>
-    <text class="panel-copy" x="31" y="192">tracks progress, and</text>
-    <text class="panel-copy" x="31" y="220">writes handoffs.</text>
-    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
+  <!-- Arrow 2→3 -->
+  <polygon points="600,308 616,316 600,324" fill="#6b7db3"/>
+
+  <!-- 03 task-runner — C #e8a030 -->
+  <g transform="translate(628 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#e8a030"/>
+    <text class="step-num" x="140" y="88">03</text>
+    <circle cx="52" cy="62" r="28" fill="#fdf3e3"/>
+    <polygon points="44,50 44,74 68,62" fill="#e8a030"/>
+    <text class="step-name" x="20" y="124">task-runner</text>
+    <text class="step-body" x="20" y="152">Executes one task at a</text>
+    <text class="step-body" x="20" y="173">time, tracks progress,</text>
+    <text class="step-body" x="20" y="194">and writes handoffs.</text>
   </g>
 
-  <g transform="translate(960 250)">
-    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="252" height="14" rx="7" fill="#6c7682"/>
-    <circle cx="54" cy="72" r="32" fill="#eef1f4"/>
-    <circle cx="50" cy="69" r="12" fill="none" stroke="#51606c" stroke-width="5"/>
-    <path d="M58 77L68 87" stroke="#51606c" stroke-width="6" stroke-linecap="round"/>
-    <path d="M44 70L50 76L58 64" stroke="#51606c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <text class="panel-title" x="31" y="124">reviewer</text>
-    <text class="panel-copy" x="31" y="160">Checks the diff against</text>
-    <text class="panel-copy" x="31" y="184">constraints and plans,</text>
-    <text class="panel-copy" x="31" y="208">then drafts the PR</text>
-    <text class="panel-copy" x="31" y="232">description draft.</text>
-    <rect x="31" y="242" width="190" height="1" fill="#e2ebe6"/>
+  <!-- Arrow 3→4 -->
+  <polygon points="874,308 890,316 874,324" fill="#6b7db3"/>
+
+  <!-- 04 reviewer — D #c0544a -->
+  <g transform="translate(902 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#c0544a"/>
+    <text class="step-num" x="140" y="88">04</text>
+    <circle cx="52" cy="62" r="28" fill="#f5e8e7"/>
+    <circle cx="49" cy="59" r="11" fill="none" stroke="#c0544a" stroke-width="5"/>
+    <line x1="57" y1="67" x2="67" y2="77" stroke="#c0544a" stroke-width="5" stroke-linecap="round"/>
+    <text class="step-name" x="20" y="124">reviewer</text>
+    <text class="step-body" x="20" y="152">Checks the diff against</text>
+    <text class="step-body" x="20" y="173">constraints and plans,</text>
+    <text class="step-body" x="20" y="194">then drafts the PR.</text>
   </g>
 
-  <g transform="translate(1246 250)">
-    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="252" height="14" rx="7" fill="#5d7fb8"/>
-    <circle cx="54" cy="72" r="32" fill="#e6edf7"/>
-    <path d="M43 61H67M43 73H67M43 85H67" stroke="#3d6098" stroke-width="7" stroke-linecap="round"/>
-    <circle cx="38" cy="61" r="4" fill="#3d6098"/>
-    <circle cx="38" cy="73" r="4" fill="#3d6098"/>
-    <circle cx="38" cy="85" r="4" fill="#3d6098"/>
-    <text class="panel-title" x="31" y="124">git-workflow</text>
-    <text class="panel-copy" x="31" y="164">Keeps changes on safe</text>
-    <text class="panel-copy" x="31" y="192">branches with clean</text>
-    <text class="panel-copy" x="31" y="220">commit checkpoints.</text>
-    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
+  <!-- Arrow 4→5 -->
+  <polygon points="1148,308 1164,316 1148,324" fill="#6b7db3"/>
+
+  <!-- 05 git-workflow — E #3a6fa8 -->
+  <g transform="translate(1176 230)">
+    <rect x="0" y="0" width="238" height="272" rx="16" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="272" rx="2.5" fill="#3a6fa8"/>
+    <text class="step-num" x="140" y="88">05</text>
+    <circle cx="52" cy="62" r="28" fill="#e5eef7"/>
+    <circle cx="44" cy="52" r="5" fill="#3a6fa8"/>
+    <circle cx="60" cy="52" r="5" fill="#3a6fa8"/>
+    <circle cx="52" cy="72" r="5" fill="#3a6fa8"/>
+    <line x1="44" y1="57" x2="52" y2="67" stroke="#3a6fa8" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="60" y1="57" x2="52" y2="67" stroke="#3a6fa8" stroke-width="3.5" stroke-linecap="round"/>
+    <text class="step-name" x="20" y="124">git-workflow</text>
+    <text class="step-body" x="20" y="152">Keeps changes on safe</text>
+    <text class="step-body" x="20" y="173">branches with clean</text>
+    <text class="step-body" x="20" y="194">commit checkpoints.</text>
   </g>
 
-  <g fill="#394653" stroke="#394653" stroke-width="5" stroke-linecap="round">
-    <path d="M354 384H378"/>
-    <path d="M640 384H664"/>
-    <path d="M926 384H950"/>
-    <path d="M1212 384H1236"/>
-    <path d="M377 373L389 384L377 395Z" stroke="none"/>
-    <path d="M663 373L675 384L663 395Z" stroke="none"/>
-    <path d="M949 373L961 384L949 395Z" stroke="none"/>
-    <path d="M1235 373L1247 384L1235 395Z" stroke="none"/>
+  <!-- ═══════════════ SHARED MEMORY SECTION ═══════════════ -->
+
+  <text class="section-label" x="80" y="558">FILES BECOME THE SHARED MEMORY</text>
+  <line x1="80" y1="570" x2="1520" y2="570" stroke="#c8cfe8" stroke-width="1"/>
+  <text x="80" y="594" style="font-size:14px; fill:#8a96bc; font-family: Inter, Helvetica Neue, Arial, sans-serif;">
+    Each skill writes files that the next can read without reconstructing chat history. Files are ordered by when they are created.
+  </text>
+
+  <!-- File cards: x 80 / 368 / 656 / 944 / 1232, width 260 -->
+
+  <!-- ai/PRD.md — A #3d7a6f -->
+  <g transform="translate(80 614)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#3d7a6f"/>
+    <text class="file-name" x="20" y="34">ai/PRD.md</text>
+    <text class="file-desc" x="20" y="58">Product goals, users,</text>
+    <text class="file-desc" x="20" y="76">features, and scope.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY project-kickoff</text>
   </g>
 
-  <g transform="translate(110 580)">
-    <rect x="0" y="0" width="1380" height="282" rx="24" fill="#fefefe" stroke="#d9e5df" stroke-width="2" filter="url(#soft-shadow)"/>
-    <text x="36" y="54" font-size="30" font-weight="800">Files become the shared memory</text>
-    <text x="36" y="90" class="small">Each step writes durable context that the next agent or session can read without reconstructing chat history.</text>
-
-    <g transform="translate(36 126)">
-      <rect x="0" y="0" width="246" height="104" rx="14" fill="#edf8f4" stroke="#c9e7dd"/>
-      <text class="file-label" x="22" y="35">ai/PRD.md</text>
-      <text class="file-copy" x="22" y="65">Product goals, users,</text>
-      <text class="file-copy" x="22" y="88">features, scope.</text>
-    </g>
-
-    <g transform="translate(298 126)">
-      <rect x="0" y="0" width="246" height="104" rx="14" fill="#f9ece9" stroke="#efcdc7"/>
-      <text class="file-label" x="22" y="35">ai/CONSTRAINTS.md</text>
-      <text class="file-copy" x="22" y="65">Stack, conventions,</text>
-      <text class="file-copy" x="22" y="88">verification command.</text>
-    </g>
-
-    <g transform="translate(560 126)">
-      <rect x="0" y="0" width="246" height="104" rx="14" fill="#fbf3d7" stroke="#ead58d"/>
-      <text class="file-label" x="22" y="35">ai/plans/*</text>
-      <text class="file-copy" x="22" y="65">Feature requirements</text>
-      <text class="file-copy" x="22" y="88">and atomic tasks.</text>
-    </g>
-
-    <g transform="translate(822 126)">
-      <rect x="0" y="0" width="246" height="104" rx="14" fill="#edf2fb" stroke="#cddaf0"/>
-      <text class="file-label" x="22" y="35">ai/PROGRESS.md</text>
-      <text class="file-copy" x="22" y="65">Current feature, task,</text>
-      <text class="file-copy" x="22" y="88">status, next step.</text>
-    </g>
-
-    <g transform="translate(1084 126)">
-      <rect x="0" y="0" width="246" height="104" rx="14" fill="#f0f2f2" stroke="#d6dddd"/>
-      <text class="file-label" x="22" y="35" style="font-size:18px">ai/handoff/</text>
-      <text class="file-label" x="122" y="35" style="font-size:18px">*</text>
-      <text class="file-copy" x="22" y="65">Expanded task context</text>
-      <text class="file-copy" x="22" y="88">for another model.</text>
-    </g>
+  <!-- ai/CONSTRAINTS.md — A #3d7a6f -->
+  <g transform="translate(368 614)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#3d7a6f"/>
+    <text class="file-name" x="20" y="34">ai/CONSTRAINTS.md</text>
+    <text class="file-desc" x="20" y="58">Stack, conventions,</text>
+    <text class="file-desc" x="20" y="76">verification command.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY project-kickoff</text>
   </g>
 
-  <g transform="translate(248 910)">
-    <rect x="0" y="-36" width="1104" height="64" rx="32" fill="#22313b"/>
-    <text x="552" y="6" text-anchor="middle" fill="#f7fbf8" font-size="23" font-weight="800">Plan once. Execute in small units. Review before merge. Commit checkpoints. Resume from files.</text>
+  <!-- ai/plans/* — B #6457a6 -->
+  <g transform="translate(656 614)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#6457a6"/>
+    <text class="file-name" x="20" y="34">ai/plans/*</text>
+    <text class="file-desc" x="20" y="58">Feature requirements</text>
+    <text class="file-desc" x="20" y="76">and atomic tasks.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY feature-planner</text>
   </g>
+
+  <!-- ai/PROGRESS.md — C #e8a030 -->
+  <g transform="translate(944 614)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#e8a030"/>
+    <text class="file-name" x="20" y="34">ai/PROGRESS.md</text>
+    <text class="file-desc" x="20" y="58">Current feature, task,</text>
+    <text class="file-desc" x="20" y="76">status, and next step.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY task-runner</text>
+  </g>
+
+  <!-- ai/handoff/* — C #e8a030 -->
+  <g transform="translate(1232 614)">
+    <rect x="0" y="0" width="260" height="118" rx="12" fill="#ffffff" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="5" height="118" rx="2.5" fill="#e8a030"/>
+    <text class="file-name" x="20" y="34">ai/handoff/*</text>
+    <text class="file-desc" x="20" y="58">Expanded task context</text>
+    <text class="file-desc" x="20" y="76">for another model.</text>
+    <text class="file-by" x="20" y="102">WRITTEN BY task-runner</text>
+  </g>
+
+  <!-- ═══════════════ FOOTER — no left bar ═══════════════ -->
+  <g transform="translate(80 782)">
+    <rect x="0" y="0" width="1440" height="64" rx="12" fill="#1e2d5e"/>
+    <text class="footer-text" x="720" y="39" text-anchor="middle">
+      Plan once.  Execute in small units.  Review before merge.  Commit checkpoints.  Resume from files.
+    </text>
+  </g>
+
 </svg>
