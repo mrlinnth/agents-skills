@@ -14,12 +14,17 @@ without losing the plot.
 
 ## The Pipeline
 
-The five skills are designed to feed each other:
+The six skills are designed to feed each other:
 
 ```text
 project-kickoff (once per project)
 |-- ai/CONSTRAINTS.md    technical stack, versions, conventions, verification
 `-- ai/PRD.md            product goals, users, features, scope
+
+prototype (after kickoff, before feature planning)
+|-- reads PRD.md and optional sketches
+|-- ai/prototype/index.html
+`-- ai/prototype/blueprint.md
 
 feature-planner (per feature)
 |-- Phase 1: requirements interview  -> ai/plans/<feature>/requirements.md
@@ -49,11 +54,16 @@ into the project.
    - Research versions with the three-month staleness rule.
    - Produce ai/CONSTRAINTS.md and ai/PRD.md.
 
-2. Run feature-planner for each feature.
+2. Run prototype to validate the UI and interaction model.
+   - Read PRD.md and any sketches.
+   - Confirm brand, navigation, and screen structure.
+   - Produce ai/prototype/index.html and ai/prototype/blueprint.md.
+
+3. Run feature-planner for each feature.
    - Phase 1 writes ai/plans/<feature>/requirements.md.
    - Phase 2 writes numbered plan files.
 
-3. Run task-runner init.
+4. Run task-runner init.
    - Pick the current feature.
    - Create ai/PROGRESS.md.
    - Set the first incomplete task.
@@ -105,14 +115,14 @@ For Codex:
 
 ```bash
 mkdir -p ~/.agents/skills
-cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.agents/skills/
+cp -R skills/project-kickoff skills/prototype skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.agents/skills/
 ```
 
 For Claude Code `~/.claude/skills`, copy them there instead:
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.claude/skills/
+cp -R skills/project-kickoff skills/prototype skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.claude/skills/
 ```
 
 > Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
@@ -157,6 +167,8 @@ under `scripts/`:
 |-- README.md
 |-- skills/
 |   |-- project-kickoff/
+|   |   `-- SKILL.md
+|   |-- prototype/
 |   |   `-- SKILL.md
 |   |-- feature-planner/
 |   |   `-- SKILL.md
@@ -210,20 +222,54 @@ Developer: Confirmed.
 Agent: Writes ai/PRD.md and ai/CONSTRAINTS.md.
 ```
 
-### feature-planner
+### prototype
 
-Use this once per feature after `project-kickoff` has created `ai/PRD.md` and
-`ai/CONSTRAINTS.md`.
+Use this after `project-kickoff` and before `feature-planner` when you want to
+validate the product visually before turning it into implementation plans.
 
 What it does:
 
-- Reads `ai/CONSTRAINTS.md` and `ai/PRD.md`.
+- Reads `ai/PRD.md` and any developer-provided sketches.
+- Interviews the developer about brand feel, color preferences, navigation, and
+  UI patterns.
+- Confirms a skeleton layout before building.
+- Builds a single-file interactive HTML prototype using Alpine.js and Tailwind.
+- Iterates screen by screen and updates `ai/PRD.md` when the prototype changes
+  the feature set.
+
+What it produces:
+
+- `ai/prototype/index.html`: the visual prototype.
+- `ai/prototype/blueprint.md`: the machine-readable screen and interaction map
+  that `feature-planner` uses.
+
+Example interaction:
+
+```text
+Developer: Prototype the CRM dashboard.
+Agent: Reads ai/PRD.md, asks about style and navigation, proposes the skeleton
+       layout, builds the nav shell, and then fills in the dashboard screens.
+Developer: Add a reporting screen.
+Agent: Updates the prototype, adjusts ai/PRD.md if needed, and regenerates
+       ai/prototype/blueprint.md.
+```
+
+### feature-planner
+
+Use this once per feature after `project-kickoff` and `prototype` have created
+the shared context it needs.
+
+What it does:
+
+- Reads `ai/CONSTRAINTS.md`, `ai/PRD.md`, and `ai/prototype/blueprint.md`.
 - Phase 1 interviews the developer about feature scope, user flows, edge cases,
-  dependencies, technical notes, and acceptance criteria.
+  dependencies, technical notes, and acceptance criteria in the context of the
+  prototype.
 - Writes `ai/plans/<feature>/requirements.md` after confirmation.
 - Phase 2 reads the requirements and generates implementation-ready plan files.
 - Can regenerate stale plans by reading existing requirements, scanning the
-  current codebase, and preserving tasks already marked `[DONE]`.
+  current codebase, preserving tasks already marked `[DONE]`, and reconciling
+  with the current prototype blueprint.
 
 What it produces:
 
@@ -235,7 +281,8 @@ Example interaction:
 
 ```text
 Developer: Plan the auth feature.
-Agent: Reads ai/CONSTRAINTS.md and ai/PRD.md, then asks requirements questions.
+Agent: Reads ai/CONSTRAINTS.md, ai/PRD.md, and ai/prototype/blueprint.md, then
+       asks requirements questions.
 Developer: Defines email OTP login, rate limits, edge cases, and done criteria.
 Agent: Summarizes requirements and asks for confirmation.
 Developer: Confirmed.
@@ -376,6 +423,9 @@ your-project/
 |   |-- CONSTRAINTS.md
 |   |-- PRD.md
 |   |-- PROGRESS.md
+|   |-- prototype/
+|   |   |-- index.html
+|   |   `-- blueprint.md
 |   |-- plans/
 |   |   |-- auth/
 |   |   |   |-- requirements.md
@@ -399,6 +449,9 @@ File ownership:
 
 - `ai/CONSTRAINTS.md`: created by `project-kickoff`, read by later skills.
 - `ai/PRD.md`: created by `project-kickoff`, read by later skills.
+- `ai/prototype/index.html`: created by `prototype`.
+- `ai/prototype/blueprint.md`: created by `prototype` and read by
+  `feature-planner`.
 - `ai/plans/<feature>/requirements.md`: created by `feature-planner` Phase 1.
 - `ai/plans/<feature>/NN-*.md`: created by `feature-planner` Phase 2 and
   updated by `task-runner` when tasks complete.
@@ -457,13 +510,14 @@ Conventions:
 
 ## FAQ
 
-### Do I need all five skills?
+### Do I need all six skills?
 
 No. `git-workflow` works on its own for small tasks, and `task-runner` can run
 existing plan files. The full pipeline works best when you want durable context:
-project kickoff creates shared project context, feature planner turns features
-into executable plans, task runner executes those plans, reviewer checks the
-result before merge, and git workflow handles the mechanical git steps.
+project kickoff creates shared project context, prototype turns that context
+into a visual model, feature planner turns features into executable plans,
+task runner executes those plans, reviewer checks the result before merge, and
+git workflow handles the mechanical git steps.
 
 ### What if I am working on a small task that does not need a plan?
 
