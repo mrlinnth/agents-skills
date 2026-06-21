@@ -305,7 +305,7 @@ task-runner depends on it:
 ```
 
 Conventions:
-- Task IDs use dot notation — phase.task (1.1, 1.2, 2.1, 2.2)
+- Task IDs use dot notation — phase.task (1.1, 1.2, 2.1, 2.2). Write the ID bare, no brackets: `## Task 1.1:` not `## Task [1.1]:`
 - Tasks must be atomic — completable in a single AI coding session. Split if too large.
 - Subtasks are concrete actions, not vague instructions. "Create migration for
   users table with email, name, and password_hash columns" — not "set up the database".
@@ -351,7 +351,7 @@ When this happens:
 - Never skip a confirmation gate. Developer confirms requirements before writing the doc. Developer confirms plan structure before writing plan files.
 - Never assume scope. If something is ambiguous, ask.
 - When a prototype exists, ask informed UI questions — do not ask generically about things the prototype already shows.
-- Follow the plan file format exactly. Task-runner depends on it.
+- Follow the plan file format exactly. Task-runner depends on it. Never wrap task IDs in brackets — `## Task 1.1:` is correct, `## Task [1.1]:` will break parsing.
 - Keep communication concise. The developer is experienced.
 - If the developer corrects something, update and move on.
 - One feature at a time. No batch planning mode.
