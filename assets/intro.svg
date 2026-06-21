@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
   <title id="title">AI Agent Skills Workflow</title>
-  <desc id="desc">A one-page infographic showing how project-kickoff, feature-planner, task-runner, and git-workflow create durable context for AI coding agents.</desc>
+  <desc id="desc">A one-page infographic showing how project-kickoff, feature-planner, task-runner, reviewer, and git-workflow create durable context for AI coding agents.</desc>
   <defs>
     <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#fbfcf8"/>
@@ -74,55 +74,70 @@
     <text class="eyebrow" x="0" y="0">REPO OVERVIEW</text>
     <text class="title" x="0" y="72">AI Agent Skills Workflow</text>
     <text class="subtitle" x="0" y="120">A repeatable file-based system for AI coding agents.</text>
-    <text class="subtitle" x="0" y="154">Plan features, run tasks, hand off context, and resume without losing state.</text>
+    <text class="subtitle" x="0" y="154">Plan features, run tasks, review changes, and resume without losing state.</text>
   </g>
 
   <g transform="translate(1040 82)">
     <rect x="0" y="0" width="450" height="128" rx="18" fill="#22313b" filter="url(#soft-shadow)"/>
     <text x="32" y="42" fill="#f8fbf8" font-size="22" font-weight="800">Why this repo exists</text>
     <text x="32" y="78" fill="#dbe7df" font-size="19">Important project state is written to files,</text>
-    <text x="32" y="106" fill="#dbe7df" font-size="19">so work can span sessions and models.</text>
+    <text x="32" y="106" fill="#dbe7df" font-size="19">so work can span sessions and reviews.</text>
   </g>
 
-  <g transform="translate(98 250)">
-    <rect x="0" y="0" width="314" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="314" height="14" rx="7" fill="#2f9d8c"/>
+  <g transform="translate(102 250)">
+    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
+    <rect x="0" y="0" width="252" height="14" rx="7" fill="#2f9d8c"/>
     <circle cx="54" cy="72" r="32" fill="#dff3ee"/>
     <path d="M41 72H67M54 59V85" stroke="#1f7f71" stroke-width="7" stroke-linecap="round"/>
     <text class="panel-title" x="31" y="124">project-kickoff</text>
     <text class="panel-copy" x="31" y="164">Captures product scope,</text>
     <text class="panel-copy" x="31" y="192">users, stack, versions,</text>
     <text class="panel-copy" x="31" y="220">and verification rules.</text>
-    <rect x="31" y="236" width="252" height="1" fill="#e2ebe6"/>
+    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
   </g>
 
-  <g transform="translate(467 250)">
-    <rect x="0" y="0" width="314" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="314" height="14" rx="7" fill="#cf695e"/>
+  <g transform="translate(388 250)">
+    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
+    <rect x="0" y="0" width="252" height="14" rx="7" fill="#cf695e"/>
     <circle cx="54" cy="72" r="32" fill="#f8e6e2"/>
     <path d="M40 61H69M40 73H69M40 85H58" stroke="#a9443a" stroke-width="7" stroke-linecap="round"/>
     <text class="panel-title" x="31" y="124">feature-planner</text>
     <text class="panel-copy" x="31" y="164">Turns a feature idea</text>
     <text class="panel-copy" x="31" y="192">into requirements and</text>
     <text class="panel-copy" x="31" y="220">ordered task plans.</text>
-    <rect x="31" y="236" width="252" height="1" fill="#e2ebe6"/>
+    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
   </g>
 
-  <g transform="translate(836 250)">
-    <rect x="0" y="0" width="314" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="314" height="14" rx="7" fill="#d6a739"/>
+  <g transform="translate(674 250)">
+    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
+    <rect x="0" y="0" width="252" height="14" rx="7" fill="#d6a739"/>
     <circle cx="54" cy="72" r="32" fill="#fbf0cf"/>
     <path d="M39 71L50 82L70 58" stroke="#9a741c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     <text class="panel-title" x="31" y="124">task-runner</text>
     <text class="panel-copy" x="31" y="164">Executes one task,</text>
     <text class="panel-copy" x="31" y="192">tracks progress, and</text>
     <text class="panel-copy" x="31" y="220">writes handoffs.</text>
-    <rect x="31" y="236" width="252" height="1" fill="#e2ebe6"/>
+    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
   </g>
 
-  <g transform="translate(1205 250)">
-    <rect x="0" y="0" width="314" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
-    <rect x="0" y="0" width="314" height="14" rx="7" fill="#5d7fb8"/>
+  <g transform="translate(960 250)">
+    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
+    <rect x="0" y="0" width="252" height="14" rx="7" fill="#6c7682"/>
+    <circle cx="54" cy="72" r="32" fill="#eef1f4"/>
+    <circle cx="50" cy="69" r="12" fill="none" stroke="#51606c" stroke-width="5"/>
+    <path d="M58 77L68 87" stroke="#51606c" stroke-width="6" stroke-linecap="round"/>
+    <path d="M44 70L50 76L58 64" stroke="#51606c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text class="panel-title" x="31" y="124">reviewer</text>
+    <text class="panel-copy" x="31" y="160">Checks the diff against</text>
+    <text class="panel-copy" x="31" y="184">constraints and plans,</text>
+    <text class="panel-copy" x="31" y="208">then drafts the PR</text>
+    <text class="panel-copy" x="31" y="232">description draft.</text>
+    <rect x="31" y="242" width="190" height="1" fill="#e2ebe6"/>
+  </g>
+
+  <g transform="translate(1246 250)">
+    <rect x="0" y="0" width="252" height="268" rx="20" fill="#ffffff" stroke="#d8e2dc" stroke-width="2" filter="url(#soft-shadow)"/>
+    <rect x="0" y="0" width="252" height="14" rx="7" fill="#5d7fb8"/>
     <circle cx="54" cy="72" r="32" fill="#e6edf7"/>
     <path d="M43 61H67M43 73H67M43 85H67" stroke="#3d6098" stroke-width="7" stroke-linecap="round"/>
     <circle cx="38" cy="61" r="4" fill="#3d6098"/>
@@ -132,16 +147,18 @@
     <text class="panel-copy" x="31" y="164">Keeps changes on safe</text>
     <text class="panel-copy" x="31" y="192">branches with clean</text>
     <text class="panel-copy" x="31" y="220">commit checkpoints.</text>
-    <rect x="31" y="236" width="252" height="1" fill="#e2ebe6"/>
+    <rect x="31" y="236" width="190" height="1" fill="#e2ebe6"/>
   </g>
 
   <g fill="#394653" stroke="#394653" stroke-width="5" stroke-linecap="round">
-    <path d="M421 384H445"/>
-    <path d="M790 384H814"/>
-    <path d="M1159 384H1183"/>
-    <path d="M444 373L456 384L444 395Z" stroke="none"/>
-    <path d="M813 373L825 384L813 395Z" stroke="none"/>
-    <path d="M1182 373L1194 384L1182 395Z" stroke="none"/>
+    <path d="M354 384H378"/>
+    <path d="M640 384H664"/>
+    <path d="M926 384H950"/>
+    <path d="M1212 384H1236"/>
+    <path d="M377 373L389 384L377 395Z" stroke="none"/>
+    <path d="M663 373L675 384L663 395Z" stroke="none"/>
+    <path d="M949 373L961 384L949 395Z" stroke="none"/>
+    <path d="M1235 373L1247 384L1235 395Z" stroke="none"/>
   </g>
 
   <g transform="translate(110 580)">
@@ -188,6 +205,6 @@
 
   <g transform="translate(248 910)">
     <rect x="0" y="-36" width="1104" height="64" rx="32" fill="#22313b"/>
-    <text x="552" y="6" text-anchor="middle" fill="#f7fbf8" font-size="23" font-weight="800">Plan once. Execute in small units. Commit checkpoints. Resume from files.</text>
+    <text x="552" y="6" text-anchor="middle" fill="#f7fbf8" font-size="23" font-weight="800">Plan once. Execute in small units. Review before merge. Commit checkpoints. Resume from files.</text>
   </g>
 </svg>

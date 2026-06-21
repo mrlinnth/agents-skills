@@ -16,7 +16,7 @@ Run `git-workflow-start <type> <branch-name>` where:
 
 Example: `git-workflow-start fix cart-total`
 
-The script handles repo init, stashing, branch creation, and collision avoidance. Report its output to the user before proceeding.
+The script handles repo init, stashing, branch creation, and collision avoidance. Branch names use flat format (`type-name`, e.g. `fix-cart-total`) to avoid git ref conflicts. Report its output to the user before proceeding.
 
 ## During the task
 

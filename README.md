@@ -8,12 +8,13 @@ scripts for running structured software projects with AI coding agents.
 It is for developers who use tools like Claude Code, Codex, OpenCode, or any
 agent that can read local instruction files and follow a repeatable workflow.
 The goal is to keep product context, technical constraints, feature plans,
-implementation progress, handoffs, and git mechanics explicit enough that work
-can span multiple sessions and even multiple AI models without losing the plot.
+implementation progress, review feedback, handoffs, and git mechanics explicit
+enough that work can span multiple sessions and even multiple AI models
+without losing the plot.
 
 ## The Pipeline
 
-The four skills are designed to feed each other:
+The five skills are designed to feed each other:
 
 ```text
 project-kickoff (once per project)
@@ -27,11 +28,14 @@ feature-planner (per feature)
 task-runner (implementation)
 `-- reads CONSTRAINTS.md, PRD.md, requirements, and plan files
 
+reviewer (after task-runner completes a feature)
+`-- checks the diff against constraints and plans, then drafts the PR description
+
 git-workflow (underneath task-runner)
 `-- branches, commits, and end-of-task summaries via bash scripts
 ```
 
-Each step produces files the next step reads. The agent does not need to
+Each step produces context the next step reads. The agent does not need to
 reconstruct context from chat history because the important state is written
 into the project.
 
@@ -65,8 +69,10 @@ into the project.
 5. The agent runs the task verification command.
 6. task-runner marks the task [DONE] and updates ai/PROGRESS.md.
 7. git-workflow-commit commits the implementation and state updates.
-8. git-workflow-end prints the branch summary and suggested next steps.
-9. snapshot saves state before stopping.
+8. reviewer checks the branch against constraints and plans, then drafts the
+   PR description.
+9. git-workflow-end prints the branch summary and suggested next steps.
+10. snapshot saves state before stopping.
 ```
 
 ### Switching Models
@@ -99,14 +105,14 @@ For Codex:
 
 ```bash
 mkdir -p ~/.agents/skills
-cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/git-workflow ~/.agents/skills/
+cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.agents/skills/
 ```
 
 For Claude Code `~/.claude/skills`, copy them there instead:
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/git-workflow ~/.claude/skills/
+cp -R skills/project-kickoff skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.claude/skills/
 ```
 
 > Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
@@ -157,6 +163,8 @@ under `scripts/`:
 |   |-- task-runner/
 |   |   |-- SKILL.md
 |   |   `-- HANDOFF.md
+|   |-- reviewer/
+|   |   `-- SKILL.md
 |   `-- git-workflow/
 |       `-- SKILL.md
 `-- scripts/
@@ -281,6 +289,34 @@ Agent: Reads constraints, PRD, auth requirements, auth plans, and PROGRESS.md.
 Agent: Calls git-workflow-start feature auth-token-management.
 Agent: Implements only task 2.3, runs its verification, marks it [DONE],
        updates PROGRESS.md, and commits the checkpoint.
+```
+
+### reviewer
+
+Use this after task-runner has completed a feature and before the branch is
+merged or turned into a PR.
+
+What it does:
+
+- Reads the git diff, commit history, `ai/CONSTRAINTS.md`, and any relevant
+  PRD or plan files.
+- Checks plan compliance, constraint compliance, code quality, and test
+  coverage.
+- Produces a single-pass review report and a PR description draft.
+
+What it produces:
+
+- A review report with findings, verdict, plan compliance, and verification
+  results.
+- A PR description draft that summarizes what changed and how it was tested.
+
+Example interaction:
+
+```text
+Developer: Review the auth feature.
+Agent: Reads the diff, constraints, plans, and progress files.
+Agent: Reports findings or confirms it is ready to merge, then drafts the PR
+       description.
 ```
 
 ### git-workflow
@@ -421,13 +457,13 @@ Conventions:
 
 ## FAQ
 
-### Do I need all four skills?
+### Do I need all five skills?
 
 No. `git-workflow` works on its own for small tasks, and `task-runner` can run
 existing plan files. The full pipeline works best when you want durable context:
 project kickoff creates shared project context, feature planner turns features
-into executable plans, task runner executes those plans, and git workflow handles
-the mechanical git steps.
+into executable plans, task runner executes those plans, reviewer checks the
+result before merge, and git workflow handles the mechanical git steps.
 
 ### What if I am working on a small task that does not need a plan?
 

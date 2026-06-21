@@ -67,7 +67,7 @@ fi
 
 # --- Step 2: Handle uncommitted changes ---
 if ! git diff --quiet HEAD 2>/dev/null || ! git diff --cached --quiet HEAD 2>/dev/null; then
-  stash_msg="Auto-stash before task: $type/$branch_slug"
+  stash_msg="Auto-stash before task: ${type}-${branch_slug}"
   echo "[stash] Uncommitted changes detected. Stashing..."
   git stash push -m "$stash_msg"
   echo "[stash] Current stash stack:"
@@ -82,7 +82,7 @@ if [[ -z "$current_branch" ]]; then
   current_branch="(detached)"
 fi
 
-target_branch="$type/$branch_slug"
+target_branch="${type}-${branch_slug}"
 
 if is_protected_branch "$current_branch"; then
   # Check for branch name collision, append suffix if needed
@@ -92,7 +92,7 @@ if is_protected_branch "$current_branch"; then
       ((suffix++))
     done
     target_branch="${target_branch}-${suffix}"
-    echo "[branch] '$type/$branch_slug' already exists. Using '$target_branch' instead."
+    echo "[branch] '${type}-${branch_slug}' already exists. Using '$target_branch' instead."
   fi
 
   git checkout -b "$target_branch"
