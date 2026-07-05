@@ -116,7 +116,7 @@ Overwrite the content on each update. Three sections:
 ## Current
 - **Feature**: auth
 - **Task**: 2.3 (Token Management)
-- **Branch**: feature/auth-token-management
+- **Branch**: feature-auth-token-management
 - **Started**: 2026-06-20
 - **Status**: Implementing token refresh logic
 
@@ -209,7 +209,8 @@ Begin working on a specific task.
 3. Find the task in that feature's plan files. If not found, stop and ask.
 4. If the task is marked `[DONE]`, warn the user and confirm before proceeding.
 5. Run `git-workflow-start <type> <branch-name>` with an appropriate type and name
-   derived from the feature and task (e.g. `feature/auth-token-management`).
+   derived from the feature and task (e.g. `git-workflow-start feature auth-token-management`,
+   which creates the flat branch `feature-auth-token-management`).
 6. Update `ai/PROGRESS.md` — set feature, current task, branch, started date.
 7. Read the task's details from the plan file and summarize what needs to be done.
 
@@ -281,6 +282,10 @@ or when pausing work.
 
 The snapshot overwrites — it does not append. PROGRESS.md always reflects
 the latest state only.
+
+Note: if the project gitignores `ai/PROGRESS.md`, the commit silently skips it
+and the snapshot persists only in the local file — that is expected for
+solo/local setups.
 
 ---
 

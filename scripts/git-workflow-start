@@ -65,16 +65,7 @@ if ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "[init] Created git repo with empty initial commit."
 fi
 
-# --- Step 2: Handle uncommitted changes ---
-if ! git diff --quiet HEAD 2>/dev/null || ! git diff --cached --quiet HEAD 2>/dev/null; then
-  stash_msg="Auto-stash before task: ${type}-${branch_slug}"
-  echo "[stash] Uncommitted changes detected. Stashing..."
-  git stash push -m "$stash_msg"
-  echo "[stash] Current stash stack:"
-  git stash list
-fi
-
-# --- Step 3: Branch logic ---
+# --- Step 2: Determine current branch ---
 current_branch=$(git branch --show-current 2>/dev/null || echo "")
 
 if [[ -z "$current_branch" ]]; then
@@ -83,8 +74,19 @@ if [[ -z "$current_branch" ]]; then
 fi
 
 target_branch="${type}-${branch_slug}"
+stashed=false
 
 if is_protected_branch "$current_branch"; then
+  # --- Step 3a: On a protected branch — stash, then create the task branch ---
+  if ! git diff --quiet HEAD 2>/dev/null || ! git diff --cached --quiet HEAD 2>/dev/null; then
+    stash_msg="Auto-stash before task: ${type}-${branch_slug}"
+    echo "[stash] Uncommitted changes detected. Stashing..."
+    git stash push -m "$stash_msg"
+    stashed=true
+    echo "[stash] Current stash stack:"
+    git stash list
+  fi
+
   # Check for branch name collision, append suffix if needed
   if git show-ref --verify --quiet "refs/heads/$target_branch"; then
     suffix=2
@@ -98,7 +100,11 @@ if is_protected_branch "$current_branch"; then
   git checkout -b "$target_branch"
   echo "[branch] Created and switched to '$target_branch'"
 else
+  # --- Step 3b: Already on a task branch — stay, keep changes, warn ---
   echo "[branch] Already on non-protected branch '$current_branch'. Continuing here."
+  echo "[branch] NOTE: requested branch '$target_branch' was NOT created."
+  echo "[branch] Uncommitted changes were left in place (not stashed)."
+  echo "[branch] To start on a fresh branch instead, switch to a protected branch first (e.g. 'git checkout main') and re-run."
   target_branch="$current_branch"
 fi
 
@@ -107,4 +113,9 @@ echo ""
 echo "=== Git Workflow Ready ==="
 echo "  Branch: $target_branch"
 echo "  Type:   $type"
+if [[ "$stashed" == true ]]; then
+  echo "  Stash:  previous uncommitted changes were stashed."
+  echo "          Restore them later with 'git stash pop' if they belong to this task,"
+  echo "          or leave them for the branch they came from."
+fi
 echo "========================="

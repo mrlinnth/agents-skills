@@ -157,6 +157,48 @@ git-workflow-end
 The first two commands should print usage text when called without the required
 arguments. `git-workflow-end` should be run inside a git repository.
 
+### AGENTS.md (global agent config)
+
+`AGENTS.md` holds the behavioral defaults that apply to every task regardless
+of which skill is active — git rules, scope discipline, task completion steps,
+destructive-action confirmation, and failure handling. Install it as your
+agent's global instruction file:
+
+For Codex:
+
+```bash
+cp AGENTS.md ~/.codex/AGENTS.md
+```
+
+For Claude Code, use it as (or merge it into) your global memory file:
+
+```bash
+cp AGENTS.md ~/.claude/CLAUDE.md
+```
+
+When a skill instruction conflicts with AGENTS.md, the skill wins for its
+specific workflow. AGENTS.md governs everything else.
+
+### ai-monitor (optional dashboard)
+
+`scripts/ai-monitor` is a small read-only Node.js dashboard for the `ai/`
+directory of a project. It shows current progress, per-feature task status,
+requirements, the PRD, and constraints, and auto-refreshes every few seconds
+while agents update the files. It requires Node.js and has no other
+dependencies.
+
+```bash
+cp scripts/ai-monitor ~/.local/bin/
+chmod +x ~/.local/bin/ai-monitor
+```
+
+Run it from a project root (or pass the project path) and open the printed URL:
+
+```bash
+ai-monitor            # current directory
+ai-monitor ~/code/my-project
+```
+
 ## Repository Layout
 
 This repo currently stores each skill under `skills/`, with executable helpers
@@ -165,6 +207,7 @@ under `scripts/`:
 ```text
 .
 |-- README.md
+|-- AGENTS.md
 |-- skills/
 |   |-- project-kickoff/
 |   |   `-- SKILL.md
@@ -174,7 +217,8 @@ under `scripts/`:
 |   |   `-- SKILL.md
 |   |-- task-runner/
 |   |   |-- SKILL.md
-|   |   `-- HANDOFF.md
+|   |   `-- references/
+|   |       `-- HANDOFF.md
 |   |-- reviewer/
 |   |   `-- SKILL.md
 |   `-- git-workflow/
@@ -396,7 +440,7 @@ Valid branch types:
 feature fix refactor chore docs
 ```
 
-Valid commit prefixes:
+Valid commit prefixes (an optional scope is allowed, e.g. `feat(2.3):`):
 
 ```text
 feat: fix: refactor: chore: docs:
@@ -542,6 +586,11 @@ The bash scripts have no AI dependency.
 Usually gitignore `ai/PROGRESS.md` because it is current local state and gets
 overwritten often. Whether to commit the rest of `ai/` depends on the team.
 
+Note: when `ai/PROGRESS.md` is gitignored, task-runner's `snapshot` command
+still writes the file but the commit silently skips it — state persists only
+locally. That is fine for solo work; teams that want snapshots shared through
+git should not ignore it.
+
 A common team `.gitignore` setup is:
 
 ```gitignore
@@ -591,6 +640,9 @@ prints suggested next steps such as pushing, opening a PR, or merging locally.
 ### What happens if there are uncommitted changes?
 
 `git-workflow-start` tries to preserve existing work before starting a task.
-In a normal repository with commits, it stashes tracked uncommitted changes and
-then creates or selects the task branch. In brand-new repositories without an
-initial commit, create the first commit before relying on stash behavior.
+On a protected branch (`main`, `master`, `develop`) it stashes tracked
+uncommitted changes, creates the task branch, and prints a `git stash pop`
+restore hint so the stash is not forgotten. If you are already on a
+non-protected branch, it stays there, leaves your changes in place, and warns
+that the requested branch was not created. In brand-new repositories without
+an initial commit, create the first commit before relying on stash behavior.

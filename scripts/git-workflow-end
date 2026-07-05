@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROTECTED_BRANCHES=("main" "master" "develop")
+# Prefer develop as the diff base when it exists — the workflow merges
+# task branches into develop, so that is the branch work diverges from.
+BASE_BRANCH_ORDER=("develop" "main" "master")
 
 find_base_branch() {
-  for b in "${PROTECTED_BRANCHES[@]}"; do
+  for b in "${BASE_BRANCH_ORDER[@]}"; do
     if git show-ref --verify --quiet "refs/heads/$b"; then
       echo "$b"
       return 0

@@ -23,7 +23,7 @@ If the script fails with a permission error, run the git commands from the scrip
 
 Rules that remain the agent's judgment:
 
-- Never push without explicit user permission but when doing local merge, can push `develop`
+- Never push without explicit user permission. Exception: pushing `develop` after a user-approved local merge (see Task Complete)
 - Use clear, descriptive commit messages
 - Commit at logical checkpoints — not after every line, not only at the end
 

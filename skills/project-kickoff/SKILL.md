@@ -224,11 +224,11 @@ If a plan file specifies its own verification, use that instead for those tasks.
 Plan files live in `ai/plans/<feature-name>/`, sorted by filename
 (e.g. `01-setup.md`, `02-auth.md`). Each feature gets its own subdirectory.
 
-Tasks use this heading format:
-### Task [N.N]: [Title]
+Tasks use this heading format (H2, bare ID — no brackets):
+## Task N.N: Title
 
 When a task is completed, append ` [DONE]` to the heading:
-### Task [N.N]: [Title] [DONE]
+## Task N.N: Title [DONE]
 ```
 
 ---
