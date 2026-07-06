@@ -77,6 +77,7 @@ After completing all subtasks:
 
 1. Mark each subtask as complete: `[x]`
 2. Commit with message: `feat([TASK_ID]): [description]`
+   (use `git-workflow-commit 'feat([TASK_ID]): [description]'` if the script is on `$PATH`)
 3. If all subtasks are done, note that the task is ready for review
 
 ---

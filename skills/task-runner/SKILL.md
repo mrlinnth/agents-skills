@@ -1,15 +1,11 @@
 ---
 name: task-runner
 description: >
-  Run, track, and hand off plan-driven implementation tasks. Use this skill whenever
-  the user mentions progress tracking, task status, starting or completing tasks,
-  resuming work, preparing handoffs, switching agents, expanding tasks for other models,
-  or running implementation plans. Also trigger when you see ai/PROGRESS.md, ai/plans/,
-  ai/CONSTRAINTS.md, or ai/PRD.md in the project, or when the user says things like
-  "what task am I on", "start auth task 2.1", "run dashboard", "prepare for handoff",
-  "status", "resume", "continue where we left off", "I'm switching to DeepSeek/GLM",
-  "expand this task", "snapshot", or "mark task done". Trigger even on loose phrasing
-  like "what's next", "keep going", or "do the next task".
+  Run, track, and hand off plan-driven implementation tasks. Use whenever the user
+  mentions task status, progress, starting/completing/resuming tasks, snapshots, or
+  handoffs to another model, or when the project contains ai/PROGRESS.md or ai/plans/.
+  Trigger even on loose phrasing like "what's next", "keep going", "status", or
+  "do the next task".
 ---
 
 # Task Runner
@@ -116,7 +112,7 @@ Overwrite the content on each update. Three sections:
 ## Current
 - **Feature**: auth
 - **Task**: 2.3 (Token Management)
-- **Branch**: feature/auth-token-management
+- **Branch**: feature-auth-token-management
 - **Started**: 2026-06-20
 - **Status**: Implementing token refresh logic
 
@@ -136,6 +132,24 @@ If PROGRESS.md does not exist when needed, create it.
 
 For completed task history, check `[DONE]` markers in plan files or run
 `git log --oneline` — do not maintain a separate log.
+
+---
+
+## Plan Freshness Check
+
+Plans are snapshots; the codebase moves under them. Before implementing any
+task, run this cheap check (file existence only — no content analysis):
+
+1. For each entry in the task's Key Files:
+   - A file the task says to CREATE that already exists → drift
+   - A file the task says to MODIFY that does not exist → drift
+2. If the task states dependencies ("Depends on: Task 1.2"), verify those
+   tasks are marked `[DONE]` → otherwise drift
+
+On drift: stop, report exactly what diverged (file by file), and suggest
+re-running feature-planner Phase 2 for this feature. Do not implement against
+a stale plan. This stop applies in autonomous mode too — drift is a
+correctness risk, same class as a verification failure.
 
 ---
 
@@ -208,10 +222,12 @@ Begin working on a specific task.
 2. If feature is not specified, use the current feature from PROGRESS.md.
 3. Find the task in that feature's plan files. If not found, stop and ask.
 4. If the task is marked `[DONE]`, warn the user and confirm before proceeding.
-5. Run `git-workflow-start <type> <branch-name>` with an appropriate type and name
-   derived from the feature and task (e.g. `feature/auth-token-management`).
-6. Update `ai/PROGRESS.md` — set feature, current task, branch, started date.
-7. Read the task's details from the plan file and summarize what needs to be done.
+5. Run the Plan Freshness Check on the task. On drift, stop and report.
+6. Run `git-workflow-start <type> <branch-name>` with an appropriate type and name
+   derived from the feature and task (e.g. `git-workflow-start feature auth-token-management`,
+   which creates the flat branch `feature-auth-token-management`).
+7. Update `ai/PROGRESS.md` — set feature, current task, branch, started date.
+8. Read the task's details from the plan file and summarize what needs to be done.
 
 ---
 
@@ -229,14 +245,16 @@ Execute tasks sequentially using a unit-of-work loop.
 For each selected task:
 
 5. Re-read the task section from the plan file.
-6. Implement only that task. Do not implement future tasks early.
-7. Run verification for that task (use the command from the plan, or infer from the project).
-8. If verification succeeds:
+6. Run the Plan Freshness Check on the task. On drift, stop and report —
+   do not continue to later tasks.
+7. Implement only that task. Do not implement future tasks early.
+8. Run verification for that task (use the command from the plan, or infer from the project).
+9. If verification succeeds:
    - Mark the task `[DONE]` in the plan file
    - Update `ai/PROGRESS.md` with the next task as current
    - Commit implementation, plan file update, and progress update together via `git-workflow-commit`
    - Continue to the next task
-9. If verification fails:
+10. If verification fails:
    - Stop
    - Report: current branch, feature, task ID, what changed, verification command, failure summary
    - Ask the user before continuing
@@ -246,7 +264,7 @@ Otherwise, continue without asking after each successful task.
 
 After all selected tasks pass:
 
-10. Run `git-workflow-end` and report the summary.
+11. Run `git-workflow-end` and report the summary.
 
 ---
 
@@ -281,6 +299,10 @@ or when pausing work.
 
 The snapshot overwrites — it does not append. PROGRESS.md always reflects
 the latest state only.
+
+Note: if the project gitignores `ai/PROGRESS.md`, the commit silently skips it
+and the snapshot persists only in the local file — that is expected for
+solo/local setups.
 
 ---
 

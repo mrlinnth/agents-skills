@@ -77,7 +77,8 @@ function parseProgress(raw) {
   var inUpNext = false;
 
   for (var i = 0; i < lines.length; i++) {
-    var t = lines[i].trim();
+    // Fields may appear bare (**Feature**: x) or as list items (- **Feature**: x)
+    var t = lines[i].trim().replace(/^[-*]\s+(?=\*\*)/, '');
 
     if (/^\*\*Feature\*\*:/.test(t)) {
       result.currentFeature = t.replace(/^\*\*Feature\*\*:\s*/, '').trim();
@@ -330,14 +331,19 @@ var DASHBOARD_HTML_OPEN = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta char
 var DASHBOARD_JS = [
 'var _data = null;',
 'var _active = null;',
+'var _lastJson = null;',
 '',
+'// Returns true when the data changed since the last fetch.',
 'async function fetchData() {',
 '  var res = await fetch("/api/data");',
-'  _data = await res.json();',
+'  var text = await res.text();',
+'  var changed = text !== _lastJson;',
+'  if (changed) { _lastJson = text; _data = JSON.parse(text); }',
+'  return changed;',
 '}',
 '',
 'function esc(s) {',
-'  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");',
+'  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#39;");',
 '}',
 '',
 'function renderMarkdown(md) {',
@@ -572,17 +578,29 @@ var DASHBOARD_JS = [
 '    "<div class=\\"card\\"><div class=\\"md-content\\">" + renderMarkdown(doc.raw) + "</div></div>";',
 '}',
 '',
+'async function refresh() {',
+'  var changed = await fetchData();',
+'  if (!changed) return;',
+'  renderHeader();',
+'  renderSidebar();',
+'  var view = _active || defaultView();',
+'  if (view && view.slice(0,8) === "feature:") {',
+'    var name = view.slice(8);',
+'    var found = false;',
+'    for (var i = 0; i < _data.features.length; i++) { if (_data.features[i].name === name) { found = true; break; } }',
+'    if (!found) view = defaultView();',
+'  }',
+'  if (view) navigate(view);',
+'  else document.getElementById("main").innerHTML = "<div class=\\"error-state\\">No content available.</div>";',
+'}',
+'',
 'async function init() {',
 '  try {',
-'    await fetchData();',
-'    renderHeader();',
-'    renderSidebar();',
-'    var view = defaultView();',
-'    if (view) navigate(view);',
-'    else document.getElementById("main").innerHTML = "<div class=\\"error-state\\">No content available.</div>";',
+'    await refresh();',
 '  } catch (err) {',
 '    document.getElementById("main").innerHTML = "<div class=\\"error-state\\">Failed to load data: " + esc(String(err)) + "</div>";',
 '  }',
+'  setInterval(function() { refresh().catch(function() {}); }, 5000);',
 '}',
 '',
 'init();'

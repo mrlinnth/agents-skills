@@ -6,6 +6,7 @@ VALID_PREFIXES=("feat:" "fix:" "refactor:" "chore:" "docs:")
 usage() {
   echo "Usage: git-workflow-commit <message>"
   echo "Message must start with one of: ${VALID_PREFIXES[*]}"
+  echo "An optional scope is allowed, e.g. 'feat(2.3): ...'"
   echo "Example: git-workflow-commit 'fix: correct cart total calculation'"
   exit 1
 }
@@ -14,17 +15,10 @@ usage() {
 
 message="$*"
 
-# --- Validate prefix ---
-valid=false
-for prefix in "${VALID_PREFIXES[@]}"; do
-  if [[ "$message" == "$prefix"* ]]; then
-    valid=true
-    break
-  fi
-done
-
-if [[ "$valid" == false ]]; then
+# --- Validate prefix (optional scope allowed: 'feat(2.3): ...') ---
+if [[ ! "$message" =~ ^(feat|fix|refactor|chore|docs)(\([^\)]+\))?:\ .+ ]]; then
   echo "Error: Commit message must start with one of: ${VALID_PREFIXES[*]}"
+  echo "An optional scope is allowed, e.g. 'feat(2.3): ...'"
   echo "Got: '$message'"
   exit 1
 fi

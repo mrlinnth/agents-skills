@@ -47,7 +47,9 @@ Single HTML file. No build step. No backend. No persistent state.
 ## Phases
 
 Work through these phases in order. Each phase ends with developer confirmation before
-moving to the next.
+moving to the next. Exception: in autonomous mode (see AGENTS.md), proceed
+through the phases without waiting — build all screens in sequence and note
+the assumptions made in the delivery message and the blueprint.md header.
 
 ### Phase 1 — Read PRD
 
@@ -97,7 +99,8 @@ Build `ai/prototype/index.html` with:
 
 Deliver the file. Let the developer review before filling in any screens.
 
-After delivering, regenerate `ai/prototype/blueprint.md` (see Blueprint section below).
+After the developer accepts the skeleton, generate the initial
+`ai/prototype/blueprint.md` (see Blueprint section below for timing rules).
 
 ### Phase 5 — Fill Screens (Iterative)
 
@@ -113,7 +116,9 @@ where features get refined — the developer may say "split this into two screen
 filter bar", "remove this section", or "add a feature we didn't plan". That's expected and
 welcome.
 
-After each screen is accepted, regenerate `ai/prototype/blueprint.md`.
+Regenerate `ai/prototype/blueprint.md` at the sync points defined in the
+Blueprint section (session end, all requested screens accepted, on request,
+or before feature-planner runs) — not after every screen tweak.
 
 ### Phase 6 — Update PRD (When Needed)
 
@@ -126,11 +131,22 @@ and the PRD.
 
 ## Blueprint — MANDATORY
 
-**Every time `index.html` is modified, regenerate `ai/prototype/blueprint.md` immediately.**
+**`ai/prototype/blueprint.md` must be regenerated before anything downstream
+reads it — but NOT after every individual change.** Rewriting the blueprint on
+each screen tweak wastes tokens on versions nobody reads.
 
-This is not optional. It happens automatically as the final action after any change to the
-prototype. The blueprint is consumed by feature-planner — if it's stale, feature-planner
-works from outdated information.
+Regenerate the blueprint when any of these happen:
+
+- The working session ends or the developer pauses
+- All screens requested in this session have been accepted
+- The developer asks for it
+- Work is about to hand off to feature-planner
+
+During rapid iteration on a screen, skip regeneration and continue.
+
+Safety net: feature-planner checks whether `index.html` is newer than
+`blueprint.md` and regenerates it before planning, so a missed regeneration
+is recoverable — but do not rely on that as the normal path.
 
 To generate it:
 1. Read the current `index.html`
@@ -183,7 +199,7 @@ or implementation specifics.
 | No PRD.md | Stop: "Run project-kickoff first to create PRD.md" |
 | PRD has no features | Warn and proceed — base prototype on style interview |
 | Developer provides sketches | Examine alongside PRD to inform layout and screen design |
-| Developer changes a screen after it's built | Modify the screen, regenerate blueprint.md |
+| Developer changes a screen after it's built | Modify the screen; regenerate blueprint.md at the next sync point (see Blueprint section) |
 | Developer adds a feature not in PRD | Build it in the prototype, update PRD.md to include it |
 | Developer removes a feature from PRD | Remove from prototype, update PRD.md |
 | Prototype already exists (re-running) | Read existing index.html and blueprint.md, continue from current state |

@@ -48,7 +48,7 @@ auto-fix issues. You read, analyze, and report.
 Detect in this order:
 
 1. Developer specifies: "review the auth feature" → read `ai/plans/auth/`
-2. Branch name match: branch `feature/auth-endpoints` → look for `ai/plans/auth/`
+2. Branch name match: branch `feature-auth-endpoints` → look for `ai/plans/auth/`
 3. `ai/PROGRESS.md` — check the current feature field
 4. Ask the developer if none of the above work
 

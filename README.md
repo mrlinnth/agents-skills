@@ -106,6 +106,32 @@ into the project.
 
 ## Installation
 
+### Quick install / update (recommended)
+
+```bash
+git pull
+./install.sh
+```
+
+`install.sh` works on macOS, Linux, WSL, and Git Bash. It syncs everything to
+the standard locations:
+
+- Skills → `~/.agents/skills/` (and symlinks `~/.claude/skills` there for
+  Claude Code if it doesn't already exist)
+- Scripts (`git-workflow-*`, `ai-monitor`) → `~/.local/bin/`
+- `AGENTS.md` → `~/.codex/AGENTS.md`
+
+Sync semantics: each managed skill directory and script is deleted at the
+destination and freshly copied, so files removed or renamed in the repo do not
+linger. Unrelated skills or files in those directories are left untouched.
+Override destinations with `SKILLS_DIR`, `BIN_DIR`, or `CODEX_HOME` env vars:
+
+```bash
+SKILLS_DIR=~/my-skills BIN_DIR=~/bin ./install.sh
+```
+
+### Manual install
+
 These skills are plain directories containing `SKILL.md` files. Install them
 where your agent expects local skills.
 
@@ -157,6 +183,48 @@ git-workflow-end
 The first two commands should print usage text when called without the required
 arguments. `git-workflow-end` should be run inside a git repository.
 
+### AGENTS.md (global agent config)
+
+`AGENTS.md` holds the behavioral defaults that apply to every task regardless
+of which skill is active — git rules, scope discipline, task completion steps,
+destructive-action confirmation, and failure handling. Install it as your
+agent's global instruction file:
+
+For Codex:
+
+```bash
+cp AGENTS.md ~/.codex/AGENTS.md
+```
+
+For Claude Code, use it as (or merge it into) your global memory file:
+
+```bash
+cp AGENTS.md ~/.claude/CLAUDE.md
+```
+
+When a skill instruction conflicts with AGENTS.md, the skill wins for its
+specific workflow. AGENTS.md governs everything else.
+
+### ai-monitor (optional dashboard)
+
+`scripts/ai-monitor` is a small read-only Node.js dashboard for the `ai/`
+directory of a project. It shows current progress, per-feature task status,
+requirements, the PRD, and constraints, and auto-refreshes every few seconds
+while agents update the files. It requires Node.js and has no other
+dependencies.
+
+```bash
+cp scripts/ai-monitor ~/.local/bin/
+chmod +x ~/.local/bin/ai-monitor
+```
+
+Run it from a project root (or pass the project path) and open the printed URL:
+
+```bash
+ai-monitor            # current directory
+ai-monitor ~/code/my-project
+```
+
 ## Repository Layout
 
 This repo currently stores each skill under `skills/`, with executable helpers
@@ -165,6 +233,8 @@ under `scripts/`:
 ```text
 .
 |-- README.md
+|-- AGENTS.md
+|-- install.sh
 |-- skills/
 |   |-- project-kickoff/
 |   |   `-- SKILL.md
@@ -174,7 +244,8 @@ under `scripts/`:
 |   |   `-- SKILL.md
 |   |-- task-runner/
 |   |   |-- SKILL.md
-|   |   `-- HANDOFF.md
+|   |   `-- references/
+|   |       `-- HANDOFF.md
 |   |-- reviewer/
 |   |   `-- SKILL.md
 |   `-- git-workflow/
@@ -251,7 +322,8 @@ Agent: Reads ai/PRD.md, asks about style and navigation, proposes the skeleton
        layout, builds the nav shell, and then fills in the dashboard screens.
 Developer: Add a reporting screen.
 Agent: Updates the prototype, adjusts ai/PRD.md if needed, and regenerates
-       ai/prototype/blueprint.md.
+       ai/prototype/blueprint.md at the next sync point (session end or
+       before feature-planner runs) rather than after every tweak.
 ```
 
 ### feature-planner
@@ -262,9 +334,14 @@ the shared context it needs.
 What it does:
 
 - Reads `ai/CONSTRAINTS.md`, `ai/PRD.md`, and `ai/prototype/blueprint.md`.
+  If the prototype changed since the blueprint was generated, regenerates the
+  blueprint before planning.
 - Phase 1 interviews the developer about feature scope, user flows, edge cases,
   dependencies, technical notes, and acceptance criteria in the context of the
   prototype.
+- Lite path for small features: say "quick plan <feature>: <one-paragraph
+  brief>" to skip the interview — one combined confirmation, then it writes a
+  short requirements.md and a single plan file.
 - Writes `ai/plans/<feature>/requirements.md` after confirmation.
 - Phase 2 reads the requirements and generates implementation-ready plan files.
 - Can regenerate stale plans by reading existing requirements, scanning the
@@ -301,6 +378,9 @@ What it does:
 - Reads project context in this order: `ai/CONSTRAINTS.md`, optional
   `ai/PRD.md`, feature requirements, numbered plan files, and `ai/PROGRESS.md`.
 - Determines the current feature and task.
+- Checks plan freshness before implementing — if the plan's key files have
+  drifted from the codebase, it stops and suggests replanning instead of
+  building against a stale plan.
 - Runs implementation tasks sequentially.
 - Marks completed task headings with `[DONE]`.
 - Keeps `ai/PROGRESS.md` small and overwrite-only so future sessions can resume
@@ -396,7 +476,7 @@ Valid branch types:
 feature fix refactor chore docs
 ```
 
-Valid commit prefixes:
+Valid commit prefixes (an optional scope is allowed, e.g. `feat(2.3):`):
 
 ```text
 feat: fix: refactor: chore: docs:
@@ -531,6 +611,21 @@ git-workflow-commit 'docs: update readme'
 git-workflow-end
 ```
 
+For features that are small but still worth planning, use feature-planner's
+lite path instead: "quick plan logout: clear tokens on server and client,
+redirect to login". It skips the interview and produces a short
+requirements.md plus one plan file after a single confirmation.
+
+### Can the skills run without stopping for confirmations?
+
+Yes — autonomous mode. Activate it per prompt ("run autonomously",
+"no confirmations") or per project with `Autonomous: yes` in
+`ai/CONSTRAINTS.md` (project-kickoff asks about this in its interview).
+When active, skills skip their confirmation gates and record the assumptions
+they made (in requirements.md, PROGRESS.md notes, or the generated files).
+Destructive actions, pushes, verification failures, and plan-drift stops are
+never skipped. See `AGENTS.md` for the full rules.
+
 ### Can I use this with models other than Claude?
 
 Yes. The skills are Markdown instruction files. They work with Claude Code,
@@ -541,6 +636,11 @@ The bash scripts have no AI dependency.
 
 Usually gitignore `ai/PROGRESS.md` because it is current local state and gets
 overwritten often. Whether to commit the rest of `ai/` depends on the team.
+
+Note: when `ai/PROGRESS.md` is gitignored, task-runner's `snapshot` command
+still writes the file but the commit silently skips it — state persists only
+locally. That is fine for solo work; teams that want snapshots shared through
+git should not ignore it.
 
 A common team `.gitignore` setup is:
 
@@ -591,6 +691,9 @@ prints suggested next steps such as pushing, opening a PR, or merging locally.
 ### What happens if there are uncommitted changes?
 
 `git-workflow-start` tries to preserve existing work before starting a task.
-In a normal repository with commits, it stashes tracked uncommitted changes and
-then creates or selects the task branch. In brand-new repositories without an
-initial commit, create the first commit before relying on stash behavior.
+On a protected branch (`main`, `master`, `develop`) it stashes tracked
+uncommitted changes, creates the task branch, and prints a `git stash pop`
+restore hint so the stash is not forgotten. If you are already on a
+non-protected branch, it stays there, leaves your changes in place, and warns
+that the requested branch was not created. In brand-new repositories without
+an initial commit, create the first commit before relying on stash behavior.
