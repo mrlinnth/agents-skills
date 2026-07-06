@@ -106,6 +106,32 @@ into the project.
 
 ## Installation
 
+### Quick install / update (recommended)
+
+```bash
+git pull
+./install.sh
+```
+
+`install.sh` works on macOS, Linux, WSL, and Git Bash. It syncs everything to
+the standard locations:
+
+- Skills → `~/.agents/skills/` (and symlinks `~/.claude/skills` there for
+  Claude Code if it doesn't already exist)
+- Scripts (`git-workflow-*`, `ai-monitor`) → `~/.local/bin/`
+- `AGENTS.md` → `~/.codex/AGENTS.md`
+
+Sync semantics: each managed skill directory and script is deleted at the
+destination and freshly copied, so files removed or renamed in the repo do not
+linger. Unrelated skills or files in those directories are left untouched.
+Override destinations with `SKILLS_DIR`, `BIN_DIR`, or `CODEX_HOME` env vars:
+
+```bash
+SKILLS_DIR=~/my-skills BIN_DIR=~/bin ./install.sh
+```
+
+### Manual install
+
 These skills are plain directories containing `SKILL.md` files. Install them
 where your agent expects local skills.
 
@@ -208,6 +234,7 @@ under `scripts/`:
 .
 |-- README.md
 |-- AGENTS.md
+|-- install.sh
 |-- skills/
 |   |-- project-kickoff/
 |   |   `-- SKILL.md
