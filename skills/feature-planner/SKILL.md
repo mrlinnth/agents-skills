@@ -6,7 +6,7 @@ description: >
   the developer wants to plan a feature, write requirements, create plan files, or
   regenerate stale plans. Trigger phrases: "plan a feature", "feature requirements",
   "plan files", "requirements interview", "let's plan", "create plans for",
-  "regenerate plans", "plans are stale", "replan", "update plans", any mention of
+  "quick plan", "regenerate plans", "plans are stale", "replan", "update plans", any mention of
   "ai/plans/", or referencing a feature by name in a planning context. Also trigger
   when the developer asks to "scope out" a feature, "break down" a feature, or
   "spec out" a feature.
@@ -53,7 +53,11 @@ Every time this skill runs, do the following before anything else:
 1. Read `ai/CONSTRAINTS.md` — for technical context
 2. Read `ai/PRD.md` — extract the core features list (name, scope, dependencies, priority)
 3. Read `ai/prototype/blueprint.md` if it exists — note which screens and interactions
-   are already prototyped for each feature
+   are already prototyped for each feature. Staleness check: if
+   `ai/prototype/index.html` is newer than `blueprint.md` (compare file
+   modification times), the blueprint is stale — regenerate it first by
+   following the Blueprint generation procedure in the prototype skill
+   (parse `x-data`, `x-show`/`x-if`, and `@click` directives), then continue
 4. Scan `ai/plans/` — for each feature in the PRD, check whether a directory exists
    and whether it contains a `requirements.md` and any plan files
 
@@ -87,6 +91,37 @@ After showing the list, ask: "Which feature do you want to plan?"
 **Exception — auto-proceed:** If exactly one feature has status `not started`, skip
 the question and proceed directly with that feature. State which feature you are
 planning before continuing.
+
+---
+
+## Lite Path — Small Features
+
+Not every feature needs the full interview. Use the lite path when the
+developer says "quick plan", "small feature", "skip the interview", or
+provides an inline brief ("plan logout: clear tokens on server and client,
+redirect to login").
+
+1. Read the same context files: `ai/CONSTRAINTS.md`, `ai/PRD.md`, and
+   `ai/prototype/blueprint.md` if it exists (staleness check still applies).
+2. From the brief plus the PRD entry, draft BOTH:
+   - A compact requirements summary (overview, flows if any, acceptance
+     criteria, out of scope)
+   - The proposed task outline (usually a single plan file)
+3. Present both in ONE message with ONE confirmation gate:
+
+   > Here are the requirements and plan for <feature>. Confirm and I'll write
+   > both files, or correct anything first.
+
+4. On confirmation, write `ai/plans/<feature-name>/requirements.md` (short
+   form) and the plan file(s) — typically just `01-implementation.md` — using
+   the same plan file format as the full path.
+
+If the brief reveals real complexity (multiple user flows, schema + API + UI
+work, cross-feature dependencies), say so and recommend the full path — but
+the developer's choice wins.
+
+In autonomous mode the single gate is skipped too: record the assumptions in
+an "Assumptions" section of requirements.md and proceed.
 
 ---
 
@@ -184,7 +219,8 @@ End with:
 
 > Does this capture it correctly? Any corrections before I write the requirements doc?
 
-Wait for confirmation.
+Wait for confirmation. Exception: in autonomous mode, record open points as an
+"Assumptions" section in requirements.md and proceed.
 
 ### Step 5: Write the requirements document
 
@@ -272,7 +308,8 @@ End with:
 > Does this structure look right? Adjust phases, tasks, or granularity before
 > I write the full plan files.
 
-Wait for confirmation.
+Wait for confirmation. Exception: in autonomous mode, proceed with the
+proposed structure and note it in the delivery message.
 
 ### Step 3: Write plan files
 
@@ -348,8 +385,9 @@ When this happens:
 - Always read both files before doing anything else.
 - Read `ai/prototype/blueprint.md` if it exists — it changes how you interview.
 - Always present the feature list at startup. Never ask "what feature?" without showing status first.
-- Never skip a confirmation gate. Developer confirms requirements before writing the doc. Developer confirms plan structure before writing plan files.
-- Never assume scope. If something is ambiguous, ask.
+- Never skip a confirmation gate. Developer confirms requirements before writing the doc. Developer confirms plan structure before writing plan files. Exception: autonomous mode (see AGENTS.md) — proceed and record assumptions in requirements.md.
+- Never assume scope. If something is ambiguous, ask (in autonomous mode: make the most conservative reasonable assumption and record it).
+- Use the Lite Path for small features when the developer signals it — one combined gate instead of two.
 - When a prototype exists, ask informed UI questions — do not ask generically about things the prototype already shows.
 - Follow the plan file format exactly. Task-runner depends on it. Never wrap task IDs in brackets — `## Task 1.1:` is correct, `## Task [1.1]:` will break parsing.
 - Keep communication concise. The developer is experienced.

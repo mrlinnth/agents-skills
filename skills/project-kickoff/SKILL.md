@@ -44,6 +44,7 @@ Keep the message concise. Number each question. Group them under two headings:
 11. Any hard deadlines, performance constraints, or non-functional requirements?
 12. Is this a new project from scratch, or are we adding to an existing one?
 13. What command verifies the project is working? (e.g. `php artisan test`, `npm run test && npm run lint`, or "none yet")
+14. Should agents run autonomously in this project — skip confirmation gates and proceed with recorded assumptions? (yes / no; destructive actions and pushes always require confirmation regardless)
 
 Wait for the developer's answers before proceeding.
 
@@ -61,6 +62,10 @@ version instead.
 
 Research each package separately. Do not rely on training data for version numbers
 — always verify with a search.
+
+If web search is not available in your environment, do NOT fall back to training
+data. Instead, list the packages that need versions and ask the developer to
+supply them (or to confirm using the previous stable major they know).
 
 Examples of what to look up:
 - "Laravel latest stable version release date"
@@ -117,7 +122,9 @@ Assumptions I am making:
 Please confirm, correct, or add anything before I write the files.
 ```
 
-Wait for confirmation before proceeding.
+Wait for confirmation before proceeding. Exception: if autonomous mode is
+active (the developer asked for no confirmations, or answered yes to the
+autonomy question), state your assumptions and proceed directly to Phase 4.
 
 ---
 
@@ -215,6 +222,12 @@ Expected: [brief description of passing state, e.g. "all tests pass", "no lint e
 
 If a plan file specifies its own verification, use that instead for those tasks.
 
+## Workflow
+
+Autonomous: [yes/no — from interview question 14. When yes, skills skip
+confirmation gates and record assumptions instead. Destructive actions and
+pushes still require confirmation.]
+
 ## Explicit Exclusions
 
 [List anything the developer said to avoid]
@@ -244,8 +257,8 @@ After writing or outputting both files, confirm to the developer:
 ## Rules for This Skill
 
 - Never skip the interview. Even if the developer provides partial context upfront, ask the remaining questions.
-- Never use training data for version numbers. Always search.
-- Never write files until the developer has confirmed the proposal.
+- Never use training data for version numbers. Always search; if search is unavailable, ask the developer.
+- Never write files until the developer has confirmed the proposal — unless autonomous mode is active, in which case state assumptions and proceed.
 - Keep questions and proposals concise. The developer is experienced — no explanations needed unless asked.
 - If the developer corrects anything, update silently and regenerate the proposal. Do not argue.
 - Only include Language Standards subsections that are relevant to the project stack. Do not include TypeScript standards for a PHP-only project, or PHP standards for a React-only project.

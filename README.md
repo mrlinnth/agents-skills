@@ -295,7 +295,8 @@ Agent: Reads ai/PRD.md, asks about style and navigation, proposes the skeleton
        layout, builds the nav shell, and then fills in the dashboard screens.
 Developer: Add a reporting screen.
 Agent: Updates the prototype, adjusts ai/PRD.md if needed, and regenerates
-       ai/prototype/blueprint.md.
+       ai/prototype/blueprint.md at the next sync point (session end or
+       before feature-planner runs) rather than after every tweak.
 ```
 
 ### feature-planner
@@ -306,9 +307,14 @@ the shared context it needs.
 What it does:
 
 - Reads `ai/CONSTRAINTS.md`, `ai/PRD.md`, and `ai/prototype/blueprint.md`.
+  If the prototype changed since the blueprint was generated, regenerates the
+  blueprint before planning.
 - Phase 1 interviews the developer about feature scope, user flows, edge cases,
   dependencies, technical notes, and acceptance criteria in the context of the
   prototype.
+- Lite path for small features: say "quick plan <feature>: <one-paragraph
+  brief>" to skip the interview — one combined confirmation, then it writes a
+  short requirements.md and a single plan file.
 - Writes `ai/plans/<feature>/requirements.md` after confirmation.
 - Phase 2 reads the requirements and generates implementation-ready plan files.
 - Can regenerate stale plans by reading existing requirements, scanning the
@@ -345,6 +351,9 @@ What it does:
 - Reads project context in this order: `ai/CONSTRAINTS.md`, optional
   `ai/PRD.md`, feature requirements, numbered plan files, and `ai/PROGRESS.md`.
 - Determines the current feature and task.
+- Checks plan freshness before implementing — if the plan's key files have
+  drifted from the codebase, it stops and suggests replanning instead of
+  building against a stale plan.
 - Runs implementation tasks sequentially.
 - Marks completed task headings with `[DONE]`.
 - Keeps `ai/PROGRESS.md` small and overwrite-only so future sessions can resume
@@ -574,6 +583,21 @@ git-workflow-start docs update-readme
 git-workflow-commit 'docs: update readme'
 git-workflow-end
 ```
+
+For features that are small but still worth planning, use feature-planner's
+lite path instead: "quick plan logout: clear tokens on server and client,
+redirect to login". It skips the interview and produces a short
+requirements.md plus one plan file after a single confirmation.
+
+### Can the skills run without stopping for confirmations?
+
+Yes — autonomous mode. Activate it per prompt ("run autonomously",
+"no confirmations") or per project with `Autonomous: yes` in
+`ai/CONSTRAINTS.md` (project-kickoff asks about this in its interview).
+When active, skills skip their confirmation gates and record the assumptions
+they made (in requirements.md, PROGRESS.md notes, or the generated files).
+Destructive actions, pushes, verification failures, and plan-drift stops are
+never skipped. See `AGENTS.md` for the full rules.
 
 ### Can I use this with models other than Claude?
 

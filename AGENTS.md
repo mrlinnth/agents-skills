@@ -47,6 +47,34 @@ before the merge question.
 
 ---
 
+## Autonomous Mode
+
+Skills pause at confirmation gates by default. Autonomous mode skips those
+gates so work can run without back-and-forth.
+
+Autonomous mode is active when either:
+
+- The developer explicitly asks in the prompt ("run autonomously",
+  "no confirmations", "don't ask, just proceed"), or
+- `ai/CONSTRAINTS.md` contains `Autonomous: yes`
+
+When active:
+
+- Skip confirmation gates and proceed with reasonable assumptions
+- Record every assumption where the next reader will see it:
+  - project-kickoff → the Assumptions block, written into the generated files
+  - feature-planner → an "Assumptions" section in requirements.md
+  - task-runner → the Notes section of ai/PROGRESS.md
+  - prototype → the delivery message and blueprint.md header
+
+Never skipped, even in autonomous mode:
+
+- Destructive actions (see Destructive Actions and Recovery)
+- Pushing to any remote
+- Stops caused by verification failures or plan drift
+
+---
+
 ## Scope
 
 - Only modify what is necessary for the current task
