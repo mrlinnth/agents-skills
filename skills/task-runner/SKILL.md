@@ -199,6 +199,10 @@ Set up task tracking for a project.
 
 Report current state without changing anything. Works at two levels:
 
+Run `task-status` (project level) or `task-status <feature>` and report from
+its output. It does the reading, counting, and branch check described below.
+Read the files yourself only if the script is not on `$PATH`.
+
 **Feature level** ("status auth"):
 1. Read plan files in `ai/plans/auth/` to count total tasks and `[DONE]` tasks.
 2. Read `ai/PROGRESS.md` for current task in that feature.
@@ -292,6 +296,10 @@ or when pausing work.
    - Current branch
    - What's been done in this task so far
    - Decisions made and rationale
+   - Ruled out: options considered and rejected, one line each with the
+     reason. Copy forward the entries from the previous PROGRESS.md, then
+     add new ones.
+   - Active plan file, if any (`ai/plans/<feature>/...` or `ai/phased-build/...`)
    - What to do next (specific, actionable)
    - Any blockers or open questions
 2. Commit via `git-workflow-commit 'chore: snapshot progress'`.
@@ -352,7 +360,12 @@ If anything is unclear, ask before proceeding.
 
 Reconstruct context when returning to a project.
 
-1. Gather state:
+1. Gather state. Run `task-status` first: it prints the branch, recent
+   commits, uncommitted changes, the Current section of PROGRESS.md, `[DONE]`
+   counts per feature, and handoff files with unchecked subtasks. Then read
+   `ai/plans/<feature>/requirements.md` and any open handoff file it lists.
+   Also read the Ruled out list in `ai/PROGRESS.md`.
+   If `task-status` is not on `$PATH`, gather the same facts by hand:
 
    From git:
    ```bash
@@ -408,6 +421,11 @@ regardless of checkbox state.
 ---
 
 ## Verification
+
+Run verification with `qa-report` (lint, tests, and build; prints only the
+failures). If your tool can run a subagent, run it there so the output stays
+out of the main context. Also run any plan command that qa-report doesn't
+cover. If `qa-report` is not on `$PATH`, run the plan's commands directly.
 
 Use the verification command from the plan file when specified.
 

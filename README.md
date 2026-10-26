@@ -118,7 +118,8 @@ the standard locations:
 
 - Skills → `~/.agents/skills/` (and symlinks `~/.claude/skills` there for
   Claude Code if it doesn't already exist)
-- Scripts (`git-workflow-*`, `ai-monitor`) → `~/.local/bin/`
+- Scripts (`git-workflow-*`, `task-status`, `qa-report`, `ai-monitor`) →
+  `~/.local/bin/`
 - `AGENTS.md` → `~/.codex/AGENTS.md`
 
 Sync semantics: each managed skill directory and script is deleted at the
@@ -152,7 +153,7 @@ cp -R skills/project-kickoff skills/prototype skills/feature-planner skills/task
 ```
 
 > Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
-> `ln -s /home/yan/.agents/skills /home/yan/.claude/skills`
+> `ln -s ~/.agents/skills ~/.claude/skills`
 
 Install the git workflow scripts onto your `PATH`:
 
@@ -161,7 +162,8 @@ mkdir -p ~/.local/bin
 cp scripts/git-workflow-start ~/.local/bin/
 cp scripts/git-workflow-commit ~/.local/bin/
 cp scripts/git-workflow-end ~/.local/bin/
-chmod +x ~/.local/bin/git-workflow-*
+cp scripts/task-status scripts/qa-report ~/.local/bin/
+chmod +x ~/.local/bin/git-workflow-* ~/.local/bin/task-status ~/.local/bin/qa-report
 ```
 
 Make sure `~/.local/bin` is on your `PATH`:
@@ -205,6 +207,26 @@ cp AGENTS.md ~/.claude/CLAUDE.md
 When a skill instruction conflicts with AGENTS.md, the skill wins for its
 specific workflow. AGENTS.md governs everything else.
 
+### task-status and qa-report
+
+Two read-only helpers that save the agent many tool calls:
+
+- `task-status [feature]` prints the git state, the Current section of
+  `ai/PROGRESS.md`, `[DONE]` counts per feature, the next open task, and open
+  handoffs. task-runner uses it for `status` and `resume`.
+- `qa-report [all|php|js]` runs Pint, `artisan test`, ESLint, and the `types`
+  and `build` npm scripts when present (through Sail when it is running). It
+  prints PASS or only the failures; the full log goes to
+  `~/.local/state/qa-report/`. task-runner and reviewer use it. It is built for
+  Laravel + JS projects; on other stacks the skills fall back to the plan's
+  own verification commands.
+
+### Claude Code extras (optional)
+
+`claude-code/` holds a `/refresh` command and a hook for the save-and-clear
+habit. They work only in Claude Code, so `install.sh` does not install them.
+See [claude-code/README.md](claude-code/README.md).
+
 ### ai-monitor (optional dashboard)
 
 `scripts/ai-monitor` is a small read-only Node.js dashboard for the `ai/`
@@ -235,6 +257,10 @@ under `scripts/`:
 |-- README.md
 |-- AGENTS.md
 |-- install.sh
+|-- claude-code/
+|   |-- README.md
+|   `-- refresh/
+|       `-- SKILL.md
 |-- skills/
 |   |-- project-kickoff/
 |   |   `-- SKILL.md
@@ -254,7 +280,9 @@ under `scripts/`:
     |-- ai-monitor
     |-- git-workflow-start
     |-- git-workflow-commit
-    `-- git-workflow-end
+    |-- git-workflow-end
+    |-- task-status
+    `-- qa-report
 ```
 
 ## Skills

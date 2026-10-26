@@ -239,6 +239,8 @@ not all sections apply to every feature. Suggested sections:
 - **Business rules and edge cases** — what happens when things go wrong
 - **Acceptance criteria** — concrete conditions for "done"
 - **Out of scope** — what this feature explicitly does not cover
+- **Ruled out** — approaches discussed in the interview and rejected, one line
+  each with the reason (omit if none)
 
 Writing guidelines:
 - Two audiences: AI coding agents implementing this, and junior developers reading

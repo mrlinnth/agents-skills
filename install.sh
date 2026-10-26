@@ -10,7 +10,7 @@ set -euo pipefail
 #
 # Destinations (override with env vars):
 #   SKILLS_DIR   ~/.agents/skills   all skill directories
-#   BIN_DIR      ~/.local/bin       git-workflow-* and ai-monitor
+#   BIN_DIR      ~/.local/bin       git-workflow-*, task-status, qa-report, ai-monitor
 #   CODEX_HOME   ~/.codex           AGENTS.md (global Codex config)
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,7 +20,7 @@ BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_SKILLS="$HOME/.claude/skills"
 
-SCRIPTS=(git-workflow-start git-workflow-commit git-workflow-end ai-monitor)
+SCRIPTS=(git-workflow-start git-workflow-commit git-workflow-end task-status qa-report ai-monitor)
 
 # --- OS detection (paths are $HOME-based everywhere; this is for messaging) ---
 case "$(uname -s)" in

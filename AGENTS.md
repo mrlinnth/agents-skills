@@ -91,6 +91,19 @@ Never skipped, even in autonomous mode:
 
 ---
 
+## Plans
+
+- Reuse list: before writing code, list the existing functions, classes, and
+  components you will reuse, and the ones you checked and rejected, with one
+  line of reason each. If you found nothing to reuse, say so.
+- Mechanism: state in 1-2 sentences how the change works: which data
+  structures and layers it touches, and any cost limit (queries, memory,
+  allocations). A plan without the how is not done.
+- Ruled out: when an option is rejected, write it down with the reason in the
+  skill's output file. Don't retry a ruled-out option unless asked.
+
+---
+
 ## Task Execution
 
 Prefer existing project scripts (e.g. `npm run dev`, `php artisan test`)

@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# task-status: print task-runner state without changing anything.
+#
+# Usage: task-status [feature]
+#
+# Prints the git state, the Current section of ai/PROGRESS.md, a branch check,
+# per-feature counts of `## Task ...` headings marked [DONE], the next open
+# task per feature, and handoff files that still have unchecked subtasks.
+
+set -uo pipefail
+
+feature=${1:-}
+root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$root" || exit 1
+
+[ -d ai/plans ] || { echo "task-status: no ai/plans/ in $root"; exit 1; }
+if [ -n "$feature" ] && [ ! -d "ai/plans/$feature" ]; then
+    echo "task-status: no feature '$feature'. Features:"
+    ls -1 ai/plans/
+    exit 1
+fi
+
+branch=$(git branch --show-current 2>/dev/null || true)
+
+echo "== Git"
+echo "branch: ${branch:-(none)}"
+git log --oneline -10 2>/dev/null | sed 's/^/  /'
+changes=$(git status --short 2>/dev/null)
+if [ -n "$changes" ]; then
+    echo "uncommitted:"
+    sed 's/^/  /' <<<"$changes"
+else
+    echo "uncommitted: none"
+fi
+
+echo
+echo "== Progress (ai/PROGRESS.md)"
+if [ -f ai/PROGRESS.md ]; then
+    awk '/^## Current/{on=1; next} /^## /{on=0} on' ai/PROGRESS.md | sed '/^[[:space:]]*$/d'
+    progress_branch=$(grep -m1 -i '\*\*Branch\*\*' ai/PROGRESS.md | sed 's/.*:[[:space:]]*//; s/`//g; s/[[:space:]]*$//')
+    if [ -n "$progress_branch" ] && [ "$progress_branch" != "$branch" ]; then
+        echo "WARNING: PROGRESS.md branch '$progress_branch' does not match git branch '$branch'"
+    fi
+else
+    echo "(missing)"
+fi
+
+echo
+echo "== Plans"
+total_all=0; done_all=0
+for dir in ai/plans/*/; do
+    name=$(basename "$dir")
+    [ -n "$feature" ] && [ "$name" != "$feature" ] && continue
+    plans=$(find "$dir" -maxdepth 1 -name '[0-9]*.md' | sort)
+    [ -n "$plans" ] || { echo "$name: no plan files"; continue; }
+    # shellcheck disable=SC2086
+    headings=$(grep -hE '^#{2,3} Task ' $plans)
+    total=$(grep -c . <<<"$headings")
+    [ -n "$headings" ] || total=0
+    done_n=$(grep -c '\[DONE\][[:space:]]*$' <<<"$headings")
+    next=$(grep -v '\[DONE\][[:space:]]*$' <<<"$headings" | head -n1 | sed -E 's/^#+ //')
+    total_all=$((total_all + total)); done_all=$((done_all + done_n))
+    if [ "$total" -gt 0 ] && [ "$done_n" -eq "$total" ]; then
+        echo "$name: $done_n/$total done (complete)"
+    else
+        echo "$name: $done_n/$total done; next: ${next:-?}"
+    fi
+done
+[ -z "$feature" ] && echo "overall: $done_all/$total_all done"
+
+if [ -d ai/handoff ]; then
+    open=""
+    for f in ai/handoff/*.md; do
+        [ -f "$f" ] || continue
+        n=$(grep -c '\[ \]' "$f")
+        [ "$n" -gt 0 ] && open+="  $f ($n unchecked)"$'\n'
+    done
+    if [ -n "$open" ]; then
+        echo
+        echo "== Open handoffs"
+        printf '%s' "$open"
+    fi
+fi

@@ -101,7 +101,10 @@ Run verification commands automatically:
 
 1. Read the verification command from `ai/CONSTRAINTS.md` (e.g., `php artisan test`)
 2. Read task-specific verification commands from plan files
-3. Run them and include the full output in the report
+3. Run `qa-report` (in a subagent, if your tool has one), plus any command
+   from steps 1-2 that qa-report doesn't cover. If `qa-report` is not on
+   `$PATH`, run the commands from steps 1-2 directly. Include the
+   PASS line or the failure list in the report, not the full output
 4. If a verification command fails, that is a Critical finding
 
 If no verification command exists, skip this section and note it.
@@ -147,7 +150,7 @@ the developer reads the report and decides what to act on.
 <Assessment relative to requirements>
 
 ## Verification Results
-<Full output of verification command, or "No verification command found">
+<PASS line or failure list from qa-report, or "No verification command found">
 ```
 
 If a section has nothing to report, write "None" rather than omitting it.
@@ -190,7 +193,7 @@ If `ai/PRD.md` does not exist, omit the "Why" section.
 | On `main` or `master` (no feature branch) | Stop. Output: "No changes to review. Switch to a feature branch first." |
 | No diff (branch is up to date with base) | Stop. Output: "No changes found between current branch and base." |
 | Base branch not found | Try both `main` and `master`. If neither works, ask the developer. |
-| Verification command fails | Report as Critical finding with full error output. |
+| Verification command fails | Report as Critical finding with the failure list. |
 | Large diff (100+ files) | Warn about review scope. Review plan-referenced files first, then scan the rest. |
 
 ---

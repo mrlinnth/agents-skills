@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# qa-report: run lint, tests, and the build. Print PASS, or only the failures.
+#
+# Usage: qa-report [all|php|js]      (default: all)
+#
+# PHP: Pint (check only) and `artisan test`.
+# JS:  ESLint (no --fix), the `types` script, and the `build` script, when present.
+# When Laravel Sail is running, every check runs through Sail.
+#
+# Full output goes to ~/.local/state/qa-report/<repo>.log, outside the repo,
+# so git-workflow-commit (git add -A) never picks it up.
+# Exit status: 0 when everything passes, 1 when any check fails.
+
+set -uo pipefail
+
+scope=${1:-all}
+case $scope in
+    all|php|js) ;;
+    *) echo "usage: qa-report [all|php|js]" >&2; exit 2 ;;
+esac
+
+root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$root" || exit 2
+
+log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/qa-report"
+mkdir -p "$log_dir"
+log="$log_dir/$(basename "$root").log"
+: > "$log"
+
+# Use Sail when its containers are running.
+sail=""
+if [ -x vendor/bin/sail ] && vendor/bin/sail ps --status running --quiet 2>/dev/null | grep -q .; then
+    sail="vendor/bin/sail"
+fi
+
+export NO_COLOR=1 FORCE_COLOR=0
+
+has_script() {  # has_script <name>: package.json defines this npm script
+    [ -f package.json ] && grep -q "\"$1\"[[:space:]]*:" package.json
+}
+
+passed=()
+failed=()
+max_lines=80
+
+# run <label> <command...>: run one check, log everything, show failures only.
+run() {
+    local label=$1; shift
+    local out status
+    out=$("$@" 2>&1)
+    status=$?
+    out=$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g' <<<"$out")
+    { echo "===== $label: $* (exit $status)"; echo "$out"; echo; } >> "$log"
+    if [ "$status" -eq 0 ]; then
+        passed+=("$label")
+        return
+    fi
+    failed+=("$label")
+    echo "===== FAIL $label (exit $status)"
+    local total
+    total=$(wc -l <<<"$out")
+    if [ "$total" -gt "$max_lines" ]; then
+        echo "[last $max_lines of $total lines; full output in $log]"
+    fi
+    tail -n "$max_lines" <<<"$out"
+    echo
+}
+
+if [ "$scope" != js ]; then
+    if [ -x vendor/bin/pint ]; then
+        if [ -n "$sail" ]; then run pint "$sail" pint --test
+        else run pint vendor/bin/pint --test; fi
+    fi
+    if [ -f artisan ]; then
+        if [ -n "$sail" ]; then run tests "$sail" artisan test
+        else run tests php artisan test; fi
+    fi
+fi
+
+if [ "$scope" != php ] && [ -f package.json ]; then
+    npm=(npm); npx=(npx)
+    if [ -n "$sail" ]; then npm=("$sail" npm); npx=("$sail" npx); fi
+    # Call ESLint directly: the starter kit's `lint` script uses --fix.
+    if [ -x node_modules/.bin/eslint ]; then
+        run eslint "${npx[@]}" --no-install eslint .
+    fi
+    has_script types && run types "${npm[@]}" run types
+    has_script build && run build "${npm[@]}" run build
+fi
+
+if [ ${#passed[@]} -eq 0 ] && [ ${#failed[@]} -eq 0 ]; then
+    echo "qa-report: no checks found for scope '$scope' in $root"
+    exit 2
+fi
+
+runner="host"; [ -n "$sail" ] && runner="sail"
+if [ ${#failed[@]} -eq 0 ]; then
+    echo "PASS ($runner): ${passed[*]}"
+    exit 0
+fi
+echo "FAILED ($runner): ${failed[*]}"
+[ ${#passed[@]} -gt 0 ] && echo "passed: ${passed[*]}"
+echo "log: $log"
+exit 1

@@ -116,6 +116,9 @@ Patterns: [brief description — e.g. thin controllers, service classes where ap
 Abstractions: [minimal — only when there is clear reuse or complexity justification]
 Verification: [command from interview, or "not yet defined"]
 
+Ruled out:
+- [stack or approach options we discussed and rejected, with the reason]
+
 Assumptions I am making:
 - [list any assumptions not confirmed by the developer's answers]
 
@@ -231,6 +234,10 @@ pushes still require confirmation.]
 ## Explicit Exclusions
 
 [List anything the developer said to avoid]
+
+## Ruled Out
+
+[Options discussed in the kickoff and rejected, one line each with the reason]
 
 ## Plan File Format
 
