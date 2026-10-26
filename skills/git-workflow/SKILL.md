@@ -6,7 +6,7 @@ description: >
 
 # Git Workflow
 
-This workflow uses three scripts on `$PATH`. Run them directly — do not replicate their logic manually.
+This workflow uses scripts on `$PATH`. Run them directly — do not replicate their logic manually.
 
 ## Before the task
 

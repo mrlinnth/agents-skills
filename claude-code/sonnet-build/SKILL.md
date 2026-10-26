@@ -101,5 +101,5 @@ Fill in the Result section: what was built, commits, any differences from the
 plan, and anything left open. Commit the updated file with
 `git-workflow-commit`.
 
-Report the result to the user in a few sentences. Then run the Task Complete
-steps from AGENTS.md.
+Report the result to the user in a few sentences. Then run the "Finishing a
+Task" steps from AGENTS.md.
