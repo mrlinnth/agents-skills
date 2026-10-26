@@ -2,573 +2,253 @@
 
 ![AI Agent Skills Workflow overview](assets/intro.png)
 
-This repository contains a small set of Markdown instruction files and shell
-scripts for running structured software projects with AI coding agents.
+Six skills and a few shell scripts for building software with AI coding agents.
+They work with Claude Code, Codex, OpenCode, or any agent that reads local
+instruction files.
 
-It is for developers who use tools like Claude Code, Codex, OpenCode, or any
-agent that can read local instruction files and follow a repeatable workflow.
-The goal is to keep product context, technical constraints, feature plans,
-implementation progress, review feedback, handoffs, and git mechanics explicit
-enough that work can span multiple sessions and even multiple AI models
-without losing the plot.
+The idea is simple: project state lives in files, not in chat history. Each
+skill writes what the next one needs, so work can span many sessions, and even
+different AI models, without losing track.
 
-## The Pipeline
-
-The six skills are designed to feed each other:
-
-```text
-project-kickoff (once per project)
-|-- ai/CONSTRAINTS.md    technical stack, versions, conventions, verification
-`-- ai/PRD.md            product goals, users, features, scope
-
-prototype (after kickoff, before feature planning)
-|-- reads PRD.md and optional sketches
-|-- ai/prototype/index.html
-`-- ai/prototype/blueprint.md
-
-feature-planner (per feature)
-|-- Phase 1: requirements interview  -> ai/plans/<feature>/requirements.md
-`-- Phase 2: plan file generation    -> ai/plans/<feature>/01-*.md
-
-task-runner (implementation)
-`-- reads CONSTRAINTS.md, PRD.md, requirements, and plan files
-
-reviewer (after task-runner completes a feature)
-`-- checks the diff against constraints and plans, then drafts the PR description
-
-git-workflow (underneath task-runner)
-`-- branches, commits, and end-of-task summaries via bash scripts
-```
-
-Each step produces context the next step reads. The agent does not need to
-reconstruct context from chat history because the important state is written
-into the project.
-
-## End-to-End Workflow
-
-### Day 1: Planning
-
-```text
-1. Run project-kickoff.
-   - Interview for product scope and technical stack.
-   - Research versions with the three-month staleness rule.
-   - Produce ai/CONSTRAINTS.md and ai/PRD.md.
-
-2. Run prototype to validate the UI and interaction model.
-   - Read PRD.md and any sketches.
-   - Confirm brand, navigation, and screen structure.
-   - Produce ai/prototype/index.html and ai/prototype/blueprint.md.
-
-3. Run feature-planner for each feature.
-   - Phase 1 writes ai/plans/<feature>/requirements.md.
-   - Phase 2 writes numbered plan files.
-
-4. Run task-runner init.
-   - Pick the current feature.
-   - Create ai/PROGRESS.md.
-   - Set the first incomplete task.
-```
-
-### Day 1-N: Implementation
-
-```text
-1. Resume or start a task.
-2. task-runner reads constraints, PRD, requirements, plans, and progress.
-3. git-workflow-start creates or selects the work branch.
-4. The agent implements one atomic task.
-5. The agent runs the task verification command.
-6. task-runner marks the task [DONE] and updates ai/PROGRESS.md.
-7. git-workflow-commit commits the implementation and state updates.
-8. reviewer checks the branch against constraints and plans, then drafts the
-   PR description.
-9. git-workflow-end prints the branch summary and suggested next steps.
-10. snapshot saves state before stopping.
-```
-
-### Switching Models
-
-```text
-1. Ask task-runner to hand off task 2.3.
-2. It writes ai/handoff/<feature>-task-2.3-<slug>.md.
-3. Open a new session with another model.
-4. Ask it to resume.
-5. The new model reads PROGRESS.md, requirements.md, plan files, and handoff.
-```
-
-### When Plans Go Stale
-
-```text
-1. Earlier features change the codebase.
-2. Re-run feature-planner Phase 2 for the affected feature.
-3. It reads the existing requirements, scans the current codebase, preserves
-   [DONE] tasks, and regenerates incomplete tasks.
-```
-
-## Installation
-
-### Quick install / update (recommended)
+## Quick Start
 
 ```bash
-git pull
+git clone https://github.com/mrlinnth/agents-skills.git && cd agents-skills
 ./install.sh
 ```
 
-`install.sh` works on macOS, Linux, WSL, and Git Bash. It syncs everything to
-the standard locations:
+To update later, run `git pull && ./install.sh`.
 
-- Skills → `~/.agents/skills/` (and symlinks `~/.claude/skills` there for
-  Claude Code if it doesn't already exist)
-- Scripts (`git-workflow-*`, `task-status`, `qa-report`, `ai-monitor`) →
-  `~/.local/bin/`
-- `AGENTS.md` → `~/.codex/AGENTS.md`
+`install.sh` works on macOS, Linux, WSL, and Git Bash. It installs:
 
-Sync semantics: each managed skill directory and script is deleted at the
-destination and freshly copied, so files removed or renamed in the repo do not
-linger. Unrelated skills or files in those directories are left untouched.
-Override destinations with `SKILLS_DIR`, `BIN_DIR`, or `CODEX_HOME` env vars:
+| What | Where |
+|---|---|
+| Skills | `~/.agents/skills/` (and links `~/.claude/skills` to it, if that doesn't exist yet) |
+| Scripts | `~/.local/bin/` |
+| `AGENTS.md` | `~/.codex/AGENTS.md` |
+
+Each run deletes and re-copies the skills and scripts it manages, so removed
+files don't linger. It leaves other files alone. To change the folders, set
+`SKILLS_DIR`, `BIN_DIR`, or `CODEX_HOME`:
 
 ```bash
 SKILLS_DIR=~/my-skills BIN_DIR=~/bin ./install.sh
 ```
 
-### Manual install
+Make sure `~/.local/bin` is on your `PATH`.
 
-These skills are plain directories containing `SKILL.md` files. Install them
-where your agent expects local skills.
+> The skills carry my Laravel + React background. Change them to fit your stack.
 
-> I use my Laravel and React background in the skills context. Feel free to update them to match your expertise.
+## How It Works
 
-For Codex:
-
-```bash
-mkdir -p ~/.agents/skills
-cp -R skills/project-kickoff skills/prototype skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.agents/skills/
-```
-
-For Claude Code `~/.claude/skills`, copy them there instead:
-
-```bash
-mkdir -p ~/.claude/skills
-cp -R skills/project-kickoff skills/prototype skills/feature-planner skills/task-runner skills/reviewer skills/git-workflow ~/.claude/skills/
-```
-
-> Or you can symlink like me and just use `~/agents/skills` as the default skills directory.
-> `ln -s ~/.agents/skills ~/.claude/skills`
-
-Install the git workflow scripts onto your `PATH`:
-
-```bash
-mkdir -p ~/.local/bin
-cp scripts/git-workflow-start ~/.local/bin/
-cp scripts/git-workflow-commit ~/.local/bin/
-cp scripts/git-workflow-end ~/.local/bin/
-cp scripts/task-status scripts/qa-report ~/.local/bin/
-chmod +x ~/.local/bin/git-workflow-* ~/.local/bin/task-status ~/.local/bin/qa-report
-```
-
-Make sure `~/.local/bin` is on your `PATH`:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Add that line to your shell profile if needed.
-
-Verify the scripts:
-
-```bash
-git-workflow-start
-git-workflow-commit
-git-workflow-end
-```
-
-The first two commands should print usage text when called without the required
-arguments. `git-workflow-end` should be run inside a git repository.
-
-### AGENTS.md (global agent config)
-
-`AGENTS.md` holds the behavioral defaults that apply to every task regardless
-of which skill is active — git rules, scope discipline, task completion steps,
-destructive-action confirmation, and failure handling. Install it as your
-agent's global instruction file:
-
-For Codex:
-
-```bash
-cp AGENTS.md ~/.codex/AGENTS.md
-```
-
-For Claude Code, use it as (or merge it into) your global memory file:
-
-```bash
-cp AGENTS.md ~/.claude/CLAUDE.md
-```
-
-When a skill instruction conflicts with AGENTS.md, the skill wins for its
-specific workflow. AGENTS.md governs everything else.
-
-### task-status and qa-report
-
-Two read-only helpers that save the agent many tool calls:
-
-- `task-status [feature]` prints the git state, the Current section of
-  `ai/PROGRESS.md`, `[DONE]` counts per feature, the next open task, and open
-  handoffs. task-runner uses it for `status` and `resume`.
-- `qa-report [all|php|js]` runs Pint, `artisan test`, ESLint, and the `types`
-  and `build` npm scripts when present (through Sail when it is running). It
-  prints PASS or only the failures; the full log goes to
-  `~/.local/state/qa-report/`. task-runner and reviewer use it. It is built for
-  Laravel + JS projects; on other stacks the skills fall back to the plan's
-  own verification commands.
-
-### Claude Code extras (optional)
-
-`claude-code/` holds a `/refresh` command and a hook for the save-and-clear
-habit. They work only in Claude Code, so `install.sh` does not install them.
-See [claude-code/README.md](claude-code/README.md).
-
-### ai-monitor (optional dashboard)
-
-`scripts/ai-monitor` is a small read-only Node.js dashboard for the `ai/`
-directory of a project. It shows current progress, per-feature task status,
-requirements, the PRD, and constraints, and auto-refreshes every few seconds
-while agents update the files. It requires Node.js and has no other
-dependencies.
-
-```bash
-cp scripts/ai-monitor ~/.local/bin/
-chmod +x ~/.local/bin/ai-monitor
-```
-
-Run it from a project root (or pass the project path) and open the printed URL:
-
-```bash
-ai-monitor            # current directory
-ai-monitor ~/code/my-project
-```
-
-## Repository Layout
-
-This repo currently stores each skill under `skills/`, with executable helpers
-under `scripts/`:
+Each skill writes files that the next skill reads:
 
 ```text
-.
-|-- README.md
-|-- AGENTS.md
-|-- install.sh
-|-- claude-code/
-|   |-- README.md
-|   `-- refresh/
-|       `-- SKILL.md
-|-- skills/
-|   |-- project-kickoff/
-|   |   `-- SKILL.md
-|   |-- prototype/
-|   |   `-- SKILL.md
-|   |-- feature-planner/
-|   |   `-- SKILL.md
-|   |-- task-runner/
-|   |   |-- SKILL.md
-|   |   `-- references/
-|   |       `-- HANDOFF.md
-|   |-- reviewer/
-|   |   `-- SKILL.md
-|   `-- git-workflow/
-|       `-- SKILL.md
-`-- scripts/
-    |-- ai-monitor
-    |-- git-workflow-start
-    |-- git-workflow-commit
-    |-- git-workflow-end
-    |-- task-status
-    `-- qa-report
+project-kickoff   once per project
+  -> ai/PRD.md            goals, users, features, scope
+  -> ai/CONSTRAINTS.md    stack, versions, conventions, test command
+
+prototype         after kickoff, before planning
+  -> ai/prototype/index.html      clickable UI prototype
+  -> ai/prototype/blueprint.md    screen map for the planner
+
+feature-planner   once per feature
+  -> ai/plans/<feature>/requirements.md
+  -> ai/plans/<feature>/01-*.md   numbered plan files
+
+task-runner       builds one task at a time
+  -> ai/PROGRESS.md       current state only
+  -> ai/handoff/*.md      task details for another model
+
+reviewer          after a feature is done
+  -> review report + PR description (no files in ai/)
+
+git-workflow      underneath everything
+  -> branches and commits, through bash scripts
 ```
 
-## Skills
+The planning skills also write down the options you **ruled out**, with the
+reason. A later session sees "we rejected X because Y" and doesn't try X again.
+
+## A Typical Day
+
+**Plan** (new project or feature):
+
+1. `project-kickoff`: answer the interview. You get `PRD.md` and `CONSTRAINTS.md`.
+2. `prototype`: check the UI before you plan. Skip it if there's no UI.
+3. `feature-planner`: plan each feature. You get requirements and plan files.
+
+**Build:**
+
+1. Say "what's next" or "resume". task-runner reads the state and picks the task.
+2. It builds one task, runs its tests, marks it `[DONE]`, and commits.
+3. Repeat. Start a fresh session every task or two to keep context small.
+
+**Finish a feature:**
+
+1. Say "review this". The reviewer checks the diff and drafts the PR text.
+2. `git-workflow-end` prints a summary. You choose: PR, local merge, or leave it.
+
+**Stop for the day:** say "snapshot". task-runner saves the state to
+`ai/PROGRESS.md`. Next time, "resume" picks it up.
+
+> **Claude Code users:** use `/refresh` then `/clear` instead of `/compact`.
+> It's cheaper and keeps the ruled-out list. See
+> [claude-code/README.md](claude-code/README.md).
+
+## The Skills
 
 ### project-kickoff
 
-Use this once at the start of a new project, or when starting a major new
-planning effort that needs clear product and technical context.
+**When:** once, at the start of a project or a big new planning effort.
 
-What it does:
+**What it does:** interviews you about scope, users, features, stack, and how
+to test. It researches current package versions, using a three-month rule: if
+a new major version is less than three months old, it suggests the previous
+one. It shows a summary and waits for your OK before writing.
 
-- Interviews the developer about product scope, users, features, exclusions,
-  success criteria, stack, packages, existing patterns, constraints, and the
-  verification command.
-- Researches current stable versions for the selected stack.
-- Applies the three-month major-version rule: if the latest major version has
-  been stable for less than three months, recommend the previous stable major.
-- Presents the proposed product summary and technical choices for confirmation
-  before writing files.
-
-What it produces:
-
-- `ai/PRD.md`: product overview, target users, problem, features, out-of-scope
-  items, success criteria, and references.
-- `ai/CONSTRAINTS.md`: stack versions, language standards, coding conventions,
-  verification command, exclusions, and plan file conventions.
-
-Example interaction:
-
-```text
-Developer: Run project-kickoff for a Laravel + React CRM.
-Agent: Asks the full product and technical interview.
-Developer: Answers scope, users, stack, packages, constraints, and verification.
-Agent: Researches versions, proposes stack and conventions, then asks for confirmation.
-Developer: Confirmed.
-Agent: Writes ai/PRD.md and ai/CONSTRAINTS.md.
-```
+**Writes:** `ai/PRD.md` and `ai/CONSTRAINTS.md`. CONSTRAINTS.md includes the
+test command, exclusions, and the options you ruled out.
 
 ### prototype
 
-Use this after `project-kickoff` and before `feature-planner` when you want to
-validate the product visually before turning it into implementation plans.
+**When:** after kickoff, before feature planning, if the product has a UI.
 
-What it does:
+**What it does:** reads the PRD and any sketches, asks about brand and
+navigation, then builds a single-file HTML prototype with Alpine.js and
+Tailwind, screen by screen. It updates the PRD when the prototype changes the
+feature list.
 
-- Reads `ai/PRD.md` and any developer-provided sketches.
-- Interviews the developer about brand feel, color preferences, navigation, and
-  UI patterns.
-- Confirms a skeleton layout before building.
-- Builds a single-file interactive HTML prototype using Alpine.js and Tailwind.
-- Iterates screen by screen and updates `ai/PRD.md` when the prototype changes
-  the feature set.
-
-What it produces:
-
-- `ai/prototype/index.html`: the visual prototype.
-- `ai/prototype/blueprint.md`: the machine-readable screen and interaction map
-  that `feature-planner` uses.
-
-Example interaction:
-
-```text
-Developer: Prototype the CRM dashboard.
-Agent: Reads ai/PRD.md, asks about style and navigation, proposes the skeleton
-       layout, builds the nav shell, and then fills in the dashboard screens.
-Developer: Add a reporting screen.
-Agent: Updates the prototype, adjusts ai/PRD.md if needed, and regenerates
-       ai/prototype/blueprint.md at the next sync point (session end or
-       before feature-planner runs) rather than after every tweak.
-```
+**Writes:** `ai/prototype/index.html` and `ai/prototype/blueprint.md` (the
+screen map feature-planner reads).
 
 ### feature-planner
 
-Use this once per feature after `project-kickoff` and `prototype` have created
-the shared context it needs.
+**When:** once per feature, and again when a plan goes stale.
 
-What it does:
+**What it does:**
 
-- Reads `ai/CONSTRAINTS.md`, `ai/PRD.md`, and `ai/prototype/blueprint.md`.
-  If the prototype changed since the blueprint was generated, regenerates the
-  blueprint before planning.
-- Phase 1 interviews the developer about feature scope, user flows, edge cases,
-  dependencies, technical notes, and acceptance criteria in the context of the
-  prototype.
-- Lite path for small features: say "quick plan <feature>: <one-paragraph
-  brief>" to skip the interview — one combined confirmation, then it writes a
-  short requirements.md and a single plan file.
-- Writes `ai/plans/<feature>/requirements.md` after confirmation.
-- Phase 2 reads the requirements and generates implementation-ready plan files.
-- Can regenerate stale plans by reading existing requirements, scanning the
-  current codebase, preserving tasks already marked `[DONE]`, and reconciling
-  with the current prototype blueprint.
+- **Phase 1:** interviews you about flows, edge cases, and done criteria, then
+  writes `requirements.md`, including a "Ruled out" section.
+- **Phase 2:** splits the work into numbered plan files.
+- **Lite path** for small features: "quick plan logout: clear tokens on server
+  and client, redirect to login". One confirmation, then a short requirements
+  file and one plan file.
+- **Replanning:** re-run Phase 2. It keeps `[DONE]` tasks and rewrites the rest
+  against the current code.
 
-What it produces:
-
-- `ai/plans/<feature>/requirements.md`
-- One or more numbered plan files such as `01-setup.md`, `02-endpoints.md`, or
-  `01-implementation.md`.
-
-Example interaction:
-
-```text
-Developer: Plan the auth feature.
-Agent: Reads ai/CONSTRAINTS.md, ai/PRD.md, and ai/prototype/blueprint.md, then
-       asks requirements questions.
-Developer: Defines email OTP login, rate limits, edge cases, and done criteria.
-Agent: Summarizes requirements and asks for confirmation.
-Developer: Confirmed.
-Agent: Writes ai/plans/auth/requirements.md.
-Developer: Generate plan files.
-Agent: Proposes phase files and task split, then writes the confirmed plans.
-```
+**Writes:** `ai/plans/<feature>/requirements.md` and `01-*.md`, `02-*.md`, ...
 
 ### task-runner
 
-Use this to execute plan files, track current state, resume work, or prepare a
-handoff for another model.
+**When:** to build from plan files, check status, stop, or resume.
 
-What it does:
-
-- Reads project context in this order: `ai/CONSTRAINTS.md`, optional
-  `ai/PRD.md`, feature requirements, numbered plan files, and `ai/PROGRESS.md`.
-- Determines the current feature and task.
-- Checks plan freshness before implementing — if the plan's key files have
-  drifted from the codebase, it stops and suggests replanning instead of
-  building against a stale plan.
-- Runs implementation tasks sequentially.
-- Marks completed task headings with `[DONE]`.
-- Keeps `ai/PROGRESS.md` small and overwrite-only so future sessions can resume
-  without reading a long history.
-- Generates handoff files for less capable or different models when needed.
-- Delegates git operations to the git workflow scripts.
-
-Commands:
+**What it does:** reads the context files, finds the current task, and checks
+the plan still matches the code. If the code has drifted, it stops and
+suggests replanning. It builds one task, runs its tests, marks it `[DONE]`, and
+commits.
 
 | Command | Use it for |
 |---|---|
-| `init` | Create tracking state for a feature and set the first incomplete task |
-| `status` | Report project or feature progress without changing files |
-| `start` | Start a specific task and set up the branch |
-| `run` | Execute pending tasks in order |
-| `complete` | Mark a task `[DONE]` and advance progress |
-| `snapshot` | Save current state before stopping |
-| `handoff` | Expand a task into an atomic handoff document |
-| `resume` | Reconstruct context from git, progress, plans, and handoff files |
+| `init` | Start tracking a feature and set the first task |
+| `status` | Show progress without changing files |
+| `start` | Start a task and set up its branch |
+| `run` | Run pending tasks in order |
+| `complete` | Mark a task `[DONE]` and move on |
+| `snapshot` | Save state before you stop |
+| `resume` | Rebuild context from git, progress, plans, and handoffs |
+| `handoff` | Write one task as small steps for another model |
 
-What it produces or updates:
-
-- `ai/PROGRESS.md`
-- `[DONE]` markers in plan file task headings
-- `ai/handoff/<feature>-task-<id>-<slug>.md` when using `handoff`
-- Git commits through `git-workflow-commit`
-
-Example interaction:
-
-```text
-Developer: Run auth task 2.3.
-Agent: Reads constraints, PRD, auth requirements, auth plans, and PROGRESS.md.
-Agent: Calls git-workflow-start feature auth-token-management.
-Agent: Implements only task 2.3, runs its verification, marks it [DONE],
-       updates PROGRESS.md, and commits the checkpoint.
-```
+**Writes:** `ai/PROGRESS.md` (latest state only, with decisions and ruled-out
+options), `[DONE]` markers, `ai/handoff/*.md`, and commits.
 
 ### reviewer
 
-Use this after task-runner has completed a feature and before the branch is
-merged or turned into a PR.
+**When:** after a feature is done, before merge or PR.
 
-What it does:
+**What it does:** reads the diff, commits, constraints, and plans. It checks
+plan and constraint compliance, code quality, and tests, then gives one report
+and a verdict. It runs `qa-report` when available.
 
-- Reads the git diff, commit history, `ai/CONSTRAINTS.md`, and any relevant
-  PRD or plan files.
-- Checks plan compliance, constraint compliance, code quality, and test
-  coverage.
-- Produces a single-pass review report and a PR description draft.
-
-What it produces:
-
-- A review report with findings, verdict, plan compliance, and verification
-  results.
-- A PR description draft that summarizes what changed and how it was tested.
-
-Example interaction:
-
-```text
-Developer: Review the auth feature.
-Agent: Reads the diff, constraints, plans, and progress files.
-Agent: Reports findings or confirms it is ready to merge, then drafts the PR
-       description.
-```
+**Writes:** nothing in `ai/`. You get a review report and a PR description.
 
 ### git-workflow
 
-Use this for git mechanics. It can be used directly for small tasks, and
-`task-runner` uses it underneath plan-driven work.
+**When:** under task-runner, or on its own for small tasks.
 
-What it does:
+**What it does:** works only on safe branches (never `main`, `master`, or
+`develop`), checks commit message prefixes, and never pushes.
 
-- Starts work on a safe branch.
-- Initializes a repo if needed.
-- Stashes existing tracked changes where possible.
-- Avoids protected branches: `main`, `master`, and `develop`.
-- Creates branch names with collision avoidance.
-- Validates commit message prefixes.
-- Stages and commits all changes.
-- Prints an end-of-task summary without pushing.
+- Branch types: `feature`, `fix`, `refactor`, `chore`, `docs`
+- Commit prefixes: `feat:`, `fix:`, `refactor:`, `chore:`, `docs:` (a scope is
+  fine, for example `feat(2.3):`)
 
-Scripts:
+## Helper Scripts
 
-| Script | Purpose |
+| Script | What it does |
 |---|---|
-| `git-workflow-start <type> <branch-name>` | Prepare repo and branch |
-| `git-workflow-commit '<prefix>: <description>'` | Stage and commit changes |
-| `git-workflow-end` | Show diff stats, status, and suggested next steps |
+| `git-workflow-start <type> <name>` | Prepares the repo and branch. On a protected branch it stashes tracked changes and prints a `git stash pop` hint. |
+| `git-workflow-commit '<prefix>: <text>'` | Stages and commits everything |
+| `git-workflow-end` | Prints diff stats, status, and next steps. Never pushes. |
+| `task-status [feature]` | Read-only: git state, current progress, `[DONE]` counts, next task, open handoffs |
+| `qa-report [all\|php\|js]` | Runs Pint, `artisan test`, ESLint, and the `types` and `build` npm scripts (through Sail if it's running). Prints PASS or only the failures. |
+| `ai-monitor [path]` | Optional browser dashboard for a project's `ai/` folder. Needs Node.js. |
 
-Valid branch types:
+`task-status` and `qa-report` save the agent many tool calls and keep long
+output out of its context. `qa-report` is built for Laravel + JS projects; on
+other stacks, the skills use the plan's own test commands.
 
-```text
-feature fix refactor chore docs
-```
+## AGENTS.md
 
-Valid commit prefixes (an optional scope is allowed, e.g. `feat(2.3):`):
+`AGENTS.md` holds the default rules for every task: git, scope, finishing a
+task, destructive actions, and what to do when a fix keeps failing. It also
+has three planning rules:
 
-```text
-feat: fix: refactor: chore: docs:
-```
+- **Reuse list:** before coding, name the existing code to reuse, and what
+  you checked and rejected.
+- **Mechanism:** say in 1-2 sentences how the change works and what it costs.
+- **Ruled out:** write rejected options down and don't retry them.
 
-Example interaction:
+`install.sh` copies it to `~/.codex/AGENTS.md`. For Claude Code, copy or merge
+it into `~/.claude/CLAUDE.md` yourself. When a skill and AGENTS.md disagree,
+the skill wins for its own workflow.
 
-```text
-Developer: Make a small docs edit.
-Agent: Runs git-workflow-start docs readme.
-Agent: Edits README.md.
-Agent: Runs git-workflow-commit 'docs: update readme'.
-Agent: Runs git-workflow-end and reports the summary.
-```
+**Autonomous mode:** say "run autonomously", or put `Autonomous: yes` in
+`ai/CONSTRAINTS.md`, and the skills skip their confirmation steps. They write
+down every assumption instead. They still stop for destructive actions,
+pushes, failed tests, and plans that no longer match the code.
 
-## Project `ai/` Directory
+## Claude Code Extras
 
-After using the full pipeline in a target project, the project will usually have
-an `ai/` directory like this:
+`claude-code/` has a `/refresh` command and a hook for the save-and-clear
+habit. They only work in Claude Code, so `install.sh` skips them. Setup steps
+are in [claude-code/README.md](claude-code/README.md).
+
+## Reference
+
+### The `ai/` folder
 
 ```text
 your-project/
-|-- ai/
-|   |-- CONSTRAINTS.md
-|   |-- PRD.md
-|   |-- PROGRESS.md
-|   |-- prototype/
-|   |   |-- index.html
-|   |   `-- blueprint.md
-|   |-- plans/
-|   |   |-- auth/
-|   |   |   |-- requirements.md
-|   |   |   |-- 01-setup.md
-|   |   |   `-- 02-endpoints.md
-|   |   |-- dashboard/
-|   |   |   |-- requirements.md
-|   |   |   |-- 01-layout.md
-|   |   |   `-- 02-widgets.md
-|   |   `-- notifications/
-|   |       |-- requirements.md
-|   |       `-- 01-implementation.md
-|   `-- handoff/
-|       `-- auth-task-2.3-token-management.md
-|-- app/
-|-- resources/
-`-- ...
+`-- ai/
+    |-- PRD.md               project-kickoff
+    |-- CONSTRAINTS.md       project-kickoff
+    |-- PROGRESS.md          task-runner (latest state only)
+    |-- prototype/
+    |   |-- index.html       prototype
+    |   `-- blueprint.md     prototype, read by feature-planner
+    |-- plans/
+    |   `-- auth/
+    |       |-- requirements.md   feature-planner Phase 1
+    |       |-- 01-setup.md       feature-planner Phase 2, [DONE] by task-runner
+    |       `-- 02-endpoints.md
+    `-- handoff/
+        `-- auth-task-2.3-token-management.md   task-runner handoff
 ```
 
-File ownership:
+### Plan file format
 
-- `ai/CONSTRAINTS.md`: created by `project-kickoff`, read by later skills.
-- `ai/PRD.md`: created by `project-kickoff`, read by later skills.
-- `ai/prototype/index.html`: created by `prototype`.
-- `ai/prototype/blueprint.md`: created by `prototype` and read by
-  `feature-planner`.
-- `ai/plans/<feature>/requirements.md`: created by `feature-planner` Phase 1.
-- `ai/plans/<feature>/NN-*.md`: created by `feature-planner` Phase 2 and
-  updated by `task-runner` when tasks complete.
-- `ai/PROGRESS.md`: maintained by `task-runner`, current state only.
-- `ai/handoff/*.md`: generated by `task-runner handoff`.
-
-## Plan File Format
-
-Plan files are intentionally regular so agents can parse and execute them.
+Plan files follow a fixed shape so agents can parse them:
 
 ```markdown
 # Phase 1: Setup
@@ -578,11 +258,9 @@ Plan files are intentionally regular so agents can parse and execute them.
 ### Subtasks
 - [ ] Create migration for users table
 - [ ] Create migration for otp_codes table
-- [ ] Add indexes for frequently queried columns
 
 ### Key Files
 - `database/migrations/2026_01_01_create_users_table.php`
-- `database/migrations/2026_01_01_create_otp_codes_table.php`
 
 ### Verification
 Run `php artisan migrate --pretend` and confirm no errors
@@ -590,47 +268,65 @@ Run `php artisan migrate --pretend` and confirm no errors
 ---
 
 ## Task 1.2: Model Setup [DONE]
-
-### Subtasks
-- [x] Create User model with fillable and casts
-- [x] Create OtpCode model with expiry logic
-- [x] Add relationships between models
-
-### Key Files
-- `app/Models/User.php`
-- `app/Models/OtpCode.php`
-
-### Verification
-Run `php artisan test --filter=ModelTest`
+...
 ```
 
-Conventions:
+Rules:
 
-- Task IDs use dot notation: `1.1`, `1.2`, `2.1`.
-- The first number is the phase. The second number is the task within that phase.
-- Task headings use `## Task N.N: Title`.
-- Completed tasks append ` [DONE]` to the task heading.
-- Subtasks use checkboxes and should be concrete actions.
-- Key files list files the agent should read, create, or modify.
-- Verification should prefer runnable commands.
-- Dependencies should be stated explicitly, for example: `Depends on: Task 1.2`.
-- Tasks should be atomic enough to complete in one AI coding session.
+- Task IDs are `phase.task`: `1.1`, `1.2`, `2.1`.
+- Headings are `## Task N.N: Title`. Done tasks end with ` [DONE]`.
+- Subtasks are concrete checkbox actions.
+- Verification is a command you can run, where possible.
+- State dependencies: `Depends on: Task 1.2`.
+- Each task fits in one AI coding session.
+
+### Repository layout
+
+```text
+.
+|-- README.md
+|-- AGENTS.md
+|-- install.sh
+|-- assets/            infographic
+|-- claude-code/       optional Claude Code extras
+|   |-- README.md
+|   `-- refresh/SKILL.md
+|-- skills/
+|   |-- project-kickoff/SKILL.md
+|   |-- prototype/SKILL.md
+|   |-- feature-planner/SKILL.md
+|   |-- task-runner/SKILL.md, references/HANDOFF.md
+|   |-- reviewer/SKILL.md
+|   `-- git-workflow/SKILL.md
+`-- scripts/
+    |-- git-workflow-start, git-workflow-commit, git-workflow-end
+    |-- task-status, qa-report
+    `-- ai-monitor
+```
+
+### Manual install
+
+The skills are plain folders with a `SKILL.md`. Copy them where your agent
+looks for skills, and the scripts onto your `PATH`:
+
+```bash
+mkdir -p ~/.agents/skills ~/.local/bin
+cp -R skills/* ~/.agents/skills/
+ln -s ~/.agents/skills ~/.claude/skills    # Claude Code, if you want one shared folder
+cp scripts/* ~/.local/bin/ && chmod +x ~/.local/bin/{git-workflow-*,task-status,qa-report,ai-monitor}
+```
 
 ## FAQ
 
 ### Do I need all six skills?
 
-No. `git-workflow` works on its own for small tasks, and `task-runner` can run
-existing plan files. The full pipeline works best when you want durable context:
-project kickoff creates shared project context, prototype turns that context
-into a visual model, feature planner turns features into executable plans,
-task runner executes those plans, reviewer checks the result before merge, and
-git workflow handles the mechanical git steps.
+No. `git-workflow` works alone for small tasks, and task-runner can run plan
+files you wrote by hand. The full pipeline pays off on projects that span many
+sessions.
 
-### What if I am working on a small task that does not need a plan?
+### What about small tasks?
 
-Use `git-workflow` directly. Start a branch, make the change, commit it, and run
-the end summary.
+Very small: use the git scripts directly.
 
 ```bash
 git-workflow-start docs update-readme
@@ -639,89 +335,39 @@ git-workflow-commit 'docs: update readme'
 git-workflow-end
 ```
 
-For features that are small but still worth planning, use feature-planner's
-lite path instead: "quick plan logout: clear tokens on server and client,
-redirect to login". It skips the interview and produces a short
-requirements.md plus one plan file after a single confirmation.
+Small but worth a plan: use feature-planner's lite path ("quick plan ...").
 
-### Can the skills run without stopping for confirmations?
+### Does it work with models other than Claude?
 
-Yes — autonomous mode. Activate it per prompt ("run autonomously",
-"no confirmations") or per project with `Autonomous: yes` in
-`ai/CONSTRAINTS.md` (project-kickoff asks about this in its interview).
-When active, skills skip their confirmation gates and record the assumptions
-they made (in requirements.md, PROGRESS.md notes, or the generated files).
-Destructive actions, pushes, verification failures, and plan-drift stops are
-never skipped. See `AGENTS.md` for the full rules.
+Yes. The skills are Markdown, and the scripts have no AI dependency. task-runner
+`handoff` writes tasks as small steps that weaker models can follow.
 
-### Can I use this with models other than Claude?
+### What should I put in `.gitignore`?
 
-Yes. The skills are Markdown instruction files. They work with Claude Code,
-Codex, OpenCode, or any agent that can read and follow local instruction files.
-The bash scripts have no AI dependency.
+Usually just `ai/PROGRESS.md`, because it changes all the time. Commit
+`CONSTRAINTS.md`, `PRD.md`, and `plans/` so the team and agents share them.
+If PROGRESS.md is ignored, `snapshot` still writes it; it just isn't committed.
+That's fine for solo work.
 
-### What should go in `.gitignore`?
+### Why does PROGRESS.md only keep the latest state?
 
-Usually gitignore `ai/PROGRESS.md` because it is current local state and gets
-overwritten often. Whether to commit the rest of `ai/` depends on the team.
-
-Note: when `ai/PROGRESS.md` is gitignored, task-runner's `snapshot` command
-still writes the file but the commit silently skips it — state persists only
-locally. That is fine for solo work; teams that want snapshots shared through
-git should not ignore it.
-
-A common team `.gitignore` setup is:
-
-```gitignore
-ai/PROGRESS.md
-```
-
-Then commit `ai/CONSTRAINTS.md`, `ai/PRD.md`, and `ai/plans/` so the team and
-agents share the same project context. For solo work, keeping all of `ai/` local
-can also be reasonable.
-
-### How do multiple features stay separate?
-
-Each feature gets its own directory under `ai/plans/`:
-
-```text
-ai/plans/auth/
-ai/plans/dashboard/
-ai/plans/notifications/
-```
-
-`task-runner` tracks the current feature in `ai/PROGRESS.md` and can report
-status per feature or across the whole project.
-
-### How do I write good plan files?
-
-Keep tasks atomic. A task should be small enough for one AI coding session.
-Include key files, concrete subtasks, explicit dependencies, and a verification
-command or clear expected outcome. Avoid vague tasks like "set up auth"; write
-tasks like "Create OTP code model and migration".
+To save tokens. A new session needs the current state, not a diary. Finished
+work is already in the `[DONE]` markers and git history. Ruled-out options are
+copied forward on every snapshot, so they aren't lost.
 
 ### What if a plan goes stale?
 
-Re-run `feature-planner` Phase 2. It should read the existing requirements,
-scan the current codebase, preserve tasks already marked `[DONE]`, and regenerate
-the incomplete plan steps.
+Re-run feature-planner Phase 2 for that feature. task-runner also stops on its
+own when a plan no longer matches the code.
 
-### Why is `PROGRESS.md` overwrite-only?
+### Does anything push or open PRs?
 
-Token cost. Future sessions need current state, not a full diary. Completed work
-is already represented by `[DONE]` markers and git history.
+No. Nothing pushes without your OK. The one exception: after you approve a
+local merge into `develop`, the agent pushes `develop`.
 
-### Does git-workflow push or open PRs?
+### What happens to uncommitted changes?
 
-No. The scripts never push without explicit user permission. `git-workflow-end`
-prints suggested next steps such as pushing, opening a PR, or merging locally.
-
-### What happens if there are uncommitted changes?
-
-`git-workflow-start` tries to preserve existing work before starting a task.
-On a protected branch (`main`, `master`, `develop`) it stashes tracked
-uncommitted changes, creates the task branch, and prints a `git stash pop`
-restore hint so the stash is not forgotten. If you are already on a
-non-protected branch, it stays there, leaves your changes in place, and warns
-that the requested branch was not created. In brand-new repositories without
-an initial commit, create the first commit before relying on stash behavior.
+On `main`, `master`, or `develop`, `git-workflow-start` stashes tracked changes,
+creates the branch, and prints a `git stash pop` hint. On any other branch it
+stays put, leaves your changes alone, and warns you. In a brand-new repo, make
+the first commit before you rely on stashing.

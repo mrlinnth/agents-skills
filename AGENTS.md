@@ -66,6 +66,7 @@ When active:
   - feature-planner → an "Assumptions" section in requirements.md
   - task-runner → the Notes section of ai/PROGRESS.md
   - prototype → the delivery message and blueprint.md header
+  - sonnet-build → the Assumptions section of its plan file
 
 Never skipped, even in autonomous mode:
 
